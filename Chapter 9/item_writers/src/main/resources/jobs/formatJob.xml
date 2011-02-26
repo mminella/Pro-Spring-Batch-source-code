@@ -21,16 +21,16 @@
 	    <beans:property name="lineMapper">
 	        <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
 	            <beans:property name="lineTokenizer">
-	                <beans:bean class="org.springframework.batch.item.file.transform.FixedLengthTokenizer">
+	                <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
 	                    <beans:property name="names"
-	                        value="firstName,middleInitial,lastName,addressNumber,street,city,state,zip"/>
-	                    <beans:property name="columns" value="1-10,11,12-21,22-27,28-47,48-56,57-58,59-63"/>
+	                        value="firstName,middleInitial,lastName,address,city,state,zip"/>
+	                    <beans:property name="delimiter" value=","/>
 	                </beans:bean>
 	            </beans:property>
 	            <beans:property name="fieldSetMapper">
 	                <beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
-	                    <beans:property name="prototypeBeanName" value="customer"/>
-	                </beans:bean>
+	                	<beans:property name="prototypeBeanName" value="customer"/>
+ 	                </beans:bean>
 	            </beans:property>
 	        </beans:bean>
 	    </beans:property>
@@ -48,25 +48,21 @@
 			<beans:bean class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
 				<beans:property name="fieldExtractor">
 					<beans:bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
-						<beans:property name="names" value="firstName,middleInitial,lastName,address,city,state,zip"/>
+						<beans:property name="names" value="firstName,lastName,address,city,state,zip"/>
 					</beans:bean>
 				</beans:property>
+				<beans:property name="format" value="%s %s lives at %s %s, %s %s"/>
 			</beans:bean>
 		</beans:property>
 	</beans:bean>
 	
-	<beans:bean id="emptyFileFailer" class="com.apress.springbatch.chapter7.EmptyInputStepFailer"/>
-
-	<step id="copyFileStep">
+	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerItemReader" writer="outputWriter" commit-interval="10"/>
-			<listeners>
-				<listener ref="emptyFileFailer"/>
-			</listeners>
+			<chunk reader="customerFileReader" writer="outputWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 
-	<job id="copyJob">
-		<step id="step1" parent="copyFileStep"/>
+	<job id="formatJob">
+		<step id="step1" parent="formatFileStep"/>
 	</job>
 </beans:beans>
