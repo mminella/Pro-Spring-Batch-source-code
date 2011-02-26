@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.springframework.batch</groupId>
-	<artifactId>spring-batch-simple-cli</artifactId>
-	<version>2.1.3.RELEASE</version>
+	<groupId>com.apress.springbatch.chapter9</groupId>
+	<artifactId>itemWriters</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>Commandline</name>
-	<url>http://www.springframework.org/spring-batch/archetypes/simple-cli-archetype</url>
-	<description>This project is a minimal command line batch sample from
-		Spring Batch. Once installed you can use "mvn exec:java" to
-		see the job run; or if you ship the lib directory you can put
-		the project jar on the classpath and run the
-		CommandLineJobRunner directly or with "java -jar launch-context.xml job1".</description>
+	<name>ItemWriters</name>
+	<url>http://www.apress.com/book/view/1430234520</url>
+	<description>This project contains the source code for Chapter 9 of 
+	the book Pro Spring Batch.</description>
 	<properties>
-		<maven.test.failure.ignore>true</maven.test.failure.ignore>
 		<spring.framework.version>2.5.6</spring.framework.version>
 		<spring.batch.version>2.1.2.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>

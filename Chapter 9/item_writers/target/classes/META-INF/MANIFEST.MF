@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Export-Package: example;version="2.1.3.RELEASE";uses:="org.springframe
+ work.batch.item",test.jdbc.datasource;version="2.1.3.RELEASE";uses:="
+ javax.sql,org.apache.commons.logging,org.springframework.beans.factor
+ y,org.springframework.core.io,org.springframework.transaction,org.spr
+ ingframework.transaction.support"
+Bundle-Version: 2.1.3.RELEASE
+Tool: Bundlor 1.0.0.RELEASE
+Bundle-Name: Spring Batch Cammand Line Archetype
+Bundle-ManifestVersion: 2
+Import-Package: javax.sql;version="0";resolution:="optional",org.apach
+ e.commons.io;version="[1.4.0, 2.0.0)";resolution:="optional",org.apac
+ he.commons.logging;version="[1.1.0, 2.0.0)",org.springframework.batch
+ .item;version="[2.0.0, 3.0.0)",org.springframework.beans.factory;vers
+ ion="[2.5.5, 4.0.0)";resolution:="optional",org.springframework.core.
+ io;version="[2.5.5, 4.0.0)";resolution:="optional",org.springframewor
+ k.dao;version="[2.5.5, 4.0.0)";resolution:="optional",org.springframe
+ work.jdbc.core;version="[2.5.5, 4.0.0)";resolution:="optional",org.sp
+ ringframework.jdbc.datasource;version="[2.5.5, 4.0.0)";resolution:="o
+ ptional",org.springframework.transaction;version="[2.5.5, 4.0.0)";res
+ olution:="optional",org.springframework.transaction.support;version="
+ [2.5.5, 4.0.0)";resolution:="optional",org.springframework.util;versi
+ on="[2.5.5, 4.0.0)";resolution:="optional"
+Bundle-SymbolicName: org.springframework.batch.archetype.simple.cli
+
