@@ -44,7 +44,7 @@
 
 	<beans:bean id="outputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
 	    <beans:property name="resource" ref="outputFile" />
-		<beans:property name="lineAggregator" ref="formattedLineAggregator">
+		<beans:property name="lineAggregator" ref="delimitedLineAggregator">
 		</beans:property>
 	</beans:bean>
 	
@@ -57,6 +57,14 @@
 		<beans:property name="format" value="%s %s lives at %s %s, %s %s"/>
 	</beans:bean>
 	
+	<beans:bean id="delimitedLineAggregator" class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+		<beans:property name="fieldExtractor">
+			<beans:bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+				<beans:property name="names" value="firstName,lastName,address,city,state,zip"/>
+			</beans:bean>
+		</beans:property>
+		<beans:property name="delimiter" value="|"/>
+	</beans:bean>
 	
 	<step id="formatFileStep">
 		<tasklet>
