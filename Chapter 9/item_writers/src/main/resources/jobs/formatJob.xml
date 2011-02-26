@@ -81,9 +81,20 @@
 	    </beans:property>
 	</beans:bean>
 	
+	<beans:bean id="jdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="sql" value="insert into customer (firstName, middleInitial, lastName, address, city, state, zip) values (:firstName, :middleInitial, :lastName, :address, :city, :state, :zip)"/>
+<!--		<beans:property name="itemPreparedStatementSetter" ref="preparedStatementSetter"/>-->
+		<beans:property name="itemSqlParameterSourceProvider">
+			<beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean id="preparedStatementSetter" class="com.apress.springbatch.chapter9.CustomerItemPreparedStatementSetter"/>
+		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="xmlOutputWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="jdbcBatchWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 
