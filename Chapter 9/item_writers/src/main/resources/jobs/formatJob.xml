@@ -42,7 +42,7 @@
 		<beans:constructor-arg value="#{jobParameters[outputFile]}"/>
 	</beans:bean>
 
-	<beans:bean id="outputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+	<beans:bean id="flatFileOutputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
 	    <beans:property name="resource" ref="outputFile" />
 		<beans:property name="lineAggregator" ref="delimitedLineAggregator">
 		</beans:property>
@@ -66,9 +66,24 @@
 		<beans:property name="delimiter" value="|"/>
 	</beans:bean>
 	
+	<beans:bean id="xmlOutputWriter" class="org.springframework.batch.item.xml.StaxEventItemWriter">
+    	<beans:property name="resource" ref="outputFile" />
+    	<beans:property name="marshaller" ref="customerMarshaller" />
+    	<beans:property name="rootTagName" value="customers" />
+    	<beans:property name="overwriteOutput" value="true" />
+	</beans:bean>
+	
+	<beans:bean id="customerMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller">
+	    <beans:property name="aliases">
+	        <util:map>
+	            <beans:entry key="customer" value="com.apress.springbatch.chapter9.Customer" />
+	        </util:map>
+	    </beans:property>
+	</beans:bean>
+	
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="outputWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="xmlOutputWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 

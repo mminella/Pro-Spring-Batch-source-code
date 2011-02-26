@@ -10,7 +10,7 @@
 	<description>This project contains the source code for Chapter 9 of 
 	the book Pro Spring Batch.</description>
 	<properties>
-		<spring.framework.version>2.5.6</spring.framework.version>
+		<spring.framework.version>3.0.5.RELEASE</spring.framework.version>
 		<spring.batch.version>2.1.2.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
@@ -98,6 +98,11 @@
 			<artifactId>spring-batch-test</artifactId>
 			<version>${spring.batch.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.ws</groupId>
+			<artifactId>spring-oxm</artifactId>
+			<version>1.5.9</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-dbcp</groupId>
