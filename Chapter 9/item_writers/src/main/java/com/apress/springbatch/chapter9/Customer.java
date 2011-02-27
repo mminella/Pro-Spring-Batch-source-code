@@ -1,13 +1,17 @@
 package com.apress.springbatch.chapter9;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
 @Table(name="customer")
 public class Customer {
-    @Id private long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
     private String firstName;
     private String middleInitial;
     private String lastName;
