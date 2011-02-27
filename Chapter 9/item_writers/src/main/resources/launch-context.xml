@@ -28,7 +28,8 @@
 	
 	<bean id="jobRepository"
 		class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean"
-		p:dataSource-ref="dataSource" p:transactionManager-ref="transactionManager" />
+		p:dataSource-ref="dataSource" p:transactionManager-ref="transactionManager" 
+		p:isolationLevelForCreate="ISOLATION_DEFAULT"/>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
 		<property name="driverClassName" value="${batch.jdbc.driver}" />
@@ -37,28 +38,46 @@
 		<property name="password" value="${batch.jdbc.password}" />
 	</bean>
 
-	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
-		<property name="dataSource" ref="dataSource" />
-	    <property name="configLocation">
-	        <value>classpath:hibernate.cfg.xml</value>
-	    </property>
-	    <property  name="configurationClass">
-	        <value>org.hibernate.cfg.AnnotationConfiguration</value>
-	    </property>        
-		<property name="hibernateProperties">
-			<value>
-				<![CDATA[
-			hibernate.show_sql=true
-			hibernate.format_sql=true
-			]]>
-			</value>
-		</property>
-	</bean>
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
 
-	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" lazy-init="true">
-		<property name="sessionFactory" ref="sessionFactory" />
-	</bean>
+    <bean id="entityManagerFactory" 
+               class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="persistenceUnitName" value="customer" />
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="showSql" value="false" />
+            </bean>
+        </property>
+        <property name="jpaDialect">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+        </property>
+    </bean>
 
+<!--	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">-->
+<!--		<property name="dataSource" ref="dataSource" />-->
+<!--	    <property name="configLocation">-->
+<!--	        <value>classpath:hibernate.cfg.xml</value>-->
+<!--	    </property>-->
+<!--	    <property  name="configurationClass">-->
+<!--	        <value>org.hibernate.cfg.AnnotationConfiguration</value>-->
+<!--	    </property>        -->
+<!--		<property name="hibernateProperties">-->
+<!--			<value>-->
+<!--				<![CDATA[-->
+<!--			hibernate.show_sql=true-->
+<!--			hibernate.format_sql=true-->
+<!--			]]>-->
+<!--			</value>-->
+<!--		</property>-->
+<!--	</bean>-->
+<!---->
+<!--	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" lazy-init="true">-->
+<!--		<property name="sessionFactory" ref="sessionFactory" />-->
+<!--	</bean>-->
+<!---->
 <!--	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">-->
 <!--		<property name="dataSource" ref="dataSource" />-->
 <!--	</bean>-->
