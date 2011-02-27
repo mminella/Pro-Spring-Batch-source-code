@@ -99,10 +99,23 @@
 	<beans:bean id="jpaBatchWriter" class="org.springframework.batch.item.database.JpaItemWriter">
 		<beans:property name="entityManagerFactory" ref="entityManagerFactory"/>
 	</beans:bean>
+	
+	<beans:bean id="customerService" class="com.apress.springbatch.chapter9.CustomerServiceImpl"/>
+
+	<beans:bean id="itemWriterAdapter" class="org.springframework.batch.item.adapter.ItemWriterAdapter">
+		<beans:property name="targetObject" ref="customerService"/>
+		<beans:property name="targetMethod" value="saveCustomer"/>
+	</beans:bean>
+		
+	<beans:bean id="parameterizedItemWriterAdapter" class="org.springframework.batch.item.adapter.PropertyExtractingDelegatingItemWriter">
+		<beans:property name="targetObject" ref="customerService"/>
+		<beans:property name="targetMethod" value="saveAddress"/>
+		<beans:property name="fieldsUsedAsTargetMethodArguments" value="address,city,state,zip"/>
+	</beans:bean>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="jpaBatchWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="parameterizedItemWriterAdapter" commit-interval="10"/>
 		</tasklet>
 	</step>
 
