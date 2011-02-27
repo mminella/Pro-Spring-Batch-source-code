@@ -90,11 +90,15 @@
 		</beans:property>
 	</beans:bean>
 	
+	<beans:bean id="hibernateBatchWriter" class="org.springframework.batch.item.database.HibernateItemWriter">
+		<beans:property name="sessionFactory" ref="sessionFactory"/>
+	</beans:bean>
+	
 	<beans:bean id="preparedStatementSetter" class="com.apress.springbatch.chapter9.CustomerItemPreparedStatementSetter"/>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="jdbcBatchWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="hibernateBatchWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 

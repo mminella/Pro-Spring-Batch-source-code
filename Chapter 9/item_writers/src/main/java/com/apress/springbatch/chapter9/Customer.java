@@ -1,6 +1,13 @@
 package com.apress.springbatch.chapter9;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="customer")
 public class Customer {
+    @Id private long id;
     private String firstName;
     private String middleInitial;
     private String lastName;
@@ -50,6 +57,12 @@ public class Customer {
     }
     public void setZip(String zip) {
         this.zip = zip;
+    }
+    public long getId() {
+        return id;
+    }
+    public void setId(long id) {
+        this.id = id;
     }
     @Override
     public String toString() {
