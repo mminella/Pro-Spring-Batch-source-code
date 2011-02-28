@@ -95,10 +95,10 @@
 <!--	<beans:bean id="hibernateBatchWriter" class="org.springframework.batch.item.database.HibernateItemWriter">-->
 <!--		<beans:property name="sessionFactory" ref="sessionFactory"/>-->
 <!--	</beans:bean>-->
-		
-	<beans:bean id="jpaBatchWriter" class="org.springframework.batch.item.database.JpaItemWriter">
-		<beans:property name="entityManagerFactory" ref="entityManagerFactory"/>
-	</beans:bean>
+<!--		-->
+<!--	<beans:bean id="jpaBatchWriter" class="org.springframework.batch.item.database.JpaItemWriter">-->
+<!--		<beans:property name="entityManagerFactory" ref="entityManagerFactory"/>-->
+<!--	</beans:bean>-->
 	
 	<beans:bean id="customerService" class="com.apress.springbatch.chapter9.CustomerServiceImpl"/>
 
@@ -112,10 +112,14 @@
 		<beans:property name="targetMethod" value="saveAddress"/>
 		<beans:property name="fieldsUsedAsTargetMethodArguments" value="address,city,state,zip"/>
 	</beans:bean>
+	
+	<beans:bean id="jmsWriter" class="org.springframework.batch.item.jms.JmsItemWriter">
+		<beans:property name="jmsTemplate" ref="jmsTemplate"/>
+	</beans:bean>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="parameterizedItemWriterAdapter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="jmsWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 

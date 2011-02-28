@@ -38,24 +38,37 @@
 		<property name="password" value="${batch.jdbc.password}" />
 	</bean>
 
-    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
-        <property name="entityManagerFactory" ref="entityManagerFactory" />
+<!--    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">-->
+<!--        <property name="entityManagerFactory" ref="entityManagerFactory" />-->
+<!--    </bean>-->
+    
+    <bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+    	<property name="brokerURL" value="vm://localhos"/>
+    </bean>
+    
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+    	<property name="connectionFactory" ref="jmsConnectionFactory"/>
+    	<property name="defaultDestination" ref="destination"/>
+    </bean>
+    
+    <bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
+    	<constructor-arg value="customerQueue"/>
     </bean>
 
-    <bean id="entityManagerFactory" 
-               class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-        <property name="dataSource" ref="dataSource" />
-        <property name="persistenceUnitName" value="customer" />
-        <property name="jpaVendorAdapter">
-            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-                <property name="showSql" value="false" />
-            </bean>
-        </property>
-        <property name="jpaDialect">
-            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
-        </property>
-    </bean>
-
+<!--    <bean id="entityManagerFactory" -->
+<!--               class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">-->
+<!--        <property name="dataSource" ref="dataSource" />-->
+<!--        <property name="persistenceUnitName" value="customer" />-->
+<!--        <property name="jpaVendorAdapter">-->
+<!--            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">-->
+<!--                <property name="showSql" value="false" />-->
+<!--            </bean>-->
+<!--        </property>-->
+<!--        <property name="jpaDialect">-->
+<!--            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />-->
+<!--        </property>-->
+<!--    </bean>-->
+<!---->
 <!--	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">-->
 <!--		<property name="dataSource" ref="dataSource" />-->
 <!--	    <property name="configLocation">-->
@@ -78,9 +91,9 @@
 <!--		<property name="sessionFactory" ref="sessionFactory" />-->
 <!--	</bean>-->
 <!---->
-<!--	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">-->
-<!--		<property name="dataSource" ref="dataSource" />-->
-<!--	</bean>-->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
 
 	<bean id="placeholderProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="location" value="classpath:batch.properties" />
