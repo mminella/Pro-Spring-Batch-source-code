@@ -94,6 +94,21 @@
 	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">
 		<property name="dataSource" ref="dataSource" />
 	</bean>
+	
+	<bean id="javaMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.someurl.com"/>
+		<property name="port" value="25"/>
+		<property name="username" value="someusername"/>
+		<property name="password" value="somepassword"/>
+		<property name="javaMailProperties">
+			<props>
+	            <!-- Use SMTP-AUTH to authenticate to SMTP server -->
+	            <prop key="mail.smtp.auth">true</prop>
+	            <!-- Use TLS to encrypt communication with SMTP server -->
+	            <prop key="mail.smtp.starttls.enable">true</prop>
+			</props>
+		</property>
+	</bean>
 
 	<bean id="placeholderProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="location" value="classpath:batch.properties" />

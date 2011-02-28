@@ -116,10 +116,16 @@
 	<beans:bean id="jmsWriter" class="org.springframework.batch.item.jms.JmsItemWriter">
 		<beans:property name="jmsTemplate" ref="jmsTemplate"/>
 	</beans:bean>
+	
+	<beans:bean id="simpleEmailWriter" class="org.springframework.batch.item.mail.SimpleMailMessageItemWriter">
+		<beans:property name="mailSender" ref="javaMailSender"/>
+	</beans:bean>
+	
+	<beans:bean id="emailConverter" class="com.apress.springbatch.chapter9.CustomerEmailConverter"/>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="jmsWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" processor="emailConverter" writer="simpleEmailWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 
