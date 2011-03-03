@@ -17,7 +17,7 @@
 	</beans:bean>
 	
 	<beans:bean id="customerFileReader" class="org.springframework.batch.item.file.FlatFileItemReader">
-	    <beans:property name="resource" ref="customerFile" />
+		<beans:property name="resource" ref="customerFile"/>
 	    <beans:property name="lineMapper">
 	        <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
 	            <beans:property name="lineTokenizer">
@@ -43,7 +43,6 @@
 	</beans:bean>
 
 	<beans:bean id="flatFileOutputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
-	    <beans:property name="resource" ref="outputFile" />
 		<beans:property name="lineAggregator" ref="delimitedLineAggregator">
 		</beans:property>
 	</beans:bean>
@@ -117,15 +116,27 @@
 		<beans:property name="jmsTemplate" ref="jmsTemplate"/>
 	</beans:bean>
 	
+	<beans:bean id="customerMailErrorHandler" class="com.apress.springbatch.chapter9.CustomerMailErrorHandler"/>
+	
 	<beans:bean id="simpleEmailWriter" class="org.springframework.batch.item.mail.SimpleMailMessageItemWriter">
 		<beans:property name="mailSender" ref="javaMailSender"/>
+		<beans:property name="mailErrorHandler" ref="customerMailErrorHandler"/>
+	</beans:bean>
+	
+	<beans:bean id="customerSuffixCreator" class="com.apress.springbatch.chapter9.CustomerOutputFileSuffixCreator"/>
+	
+	<beans:bean id="multiResourceItemWriter" class="org.springframework.batch.item.file.MultiResourceItemWriter">
+		<beans:property name="resource" ref="outputFile"/>
+		<beans:property name="delegate" ref="flatFileOutputWriter"/>
+		<beans:property name="itemCountLimitPerResource" value="10"/>
+		<beans:property name="resourceSuffixCreator" ref="customerSuffixCreator"/>
 	</beans:bean>
 	
 	<beans:bean id="emailConverter" class="com.apress.springbatch.chapter9.CustomerEmailConverter"/>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" processor="emailConverter" writer="simpleEmailWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="multiResourceItemWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 
