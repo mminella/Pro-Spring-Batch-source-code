@@ -43,8 +43,8 @@
 	</beans:bean>
 
 	<beans:bean id="flatFileOutputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
-		<beans:property name="lineAggregator" ref="delimitedLineAggregator">
-		</beans:property>
+		<beans:property name="resource" ref="outputFile"/>
+		<beans:property name="lineAggregator" ref="delimitedLineAggregator"/>
 	</beans:bean>
 	
 	<beans:bean id="formattedLineAggregator" class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
@@ -133,10 +133,33 @@
 	</beans:bean>
 	
 	<beans:bean id="emailConverter" class="com.apress.springbatch.chapter9.CustomerEmailConverter"/>
+	
+	<beans:bean id="customerCompositeWriter" class="org.springframework.batch.item.support.CompositeItemWriter">
+		<beans:property name="delegates">
+			<util:list>
+				<util:ref bean="flatFileOutputWriter"/>
+				<util:ref bean="jdbcBatchWriter"/>
+			</util:list>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean id="customerClassifier" class="com.apress.springbatch.chapter9.CustomerClassifier">
+		<beans:property name="fileItemWriter" ref="flatFileOutputWriter"/>
+		<beans:property name="jdbcItemWriter" ref="jdbcBatchWriter"/>
+	</beans:bean>
+	
+	<beans:bean id="classifierWriter" class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
+		<beans:property name="classifier" ref="customerClassifier"/>
+	</beans:bean>
 		
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="multiResourceItemWriter" commit-interval="10"/>
+			<chunk reader="customerFileReader" writer="classifierWriter" commit-interval="10">
+				<!-- Used with the composite writer and classifier -->
+            	<streams>
+                	<stream ref="flatFileOutputWriter"/>
+            	</streams>
+			</chunk>
 		</tasklet>
 	</step>
 
