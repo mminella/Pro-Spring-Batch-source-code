@@ -6,7 +6,7 @@ public class CustomerOutputFileSuffixCreator implements ResourceSuffixCreator {
 
     @Override
     public String getSuffix(int arg0) {
-        return arg0 + ".csv";
+        return arg0 + ".xml";
     }
 
 }

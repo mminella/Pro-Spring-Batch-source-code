@@ -10,7 +10,6 @@ public class CustomerClassifier implements Classifier<Customer, ItemWriter<Custo
 
     @Override
     public ItemWriter<Customer> classify(Customer customer) {
-        System.out.println("Does " + customer.getState() + " match ^[A-M] ? " + customer.getState().matches("^[A-M].*"));
         if(customer.getState().matches("^[A-M].*")) {
             return fileItemWriter;
         } else {

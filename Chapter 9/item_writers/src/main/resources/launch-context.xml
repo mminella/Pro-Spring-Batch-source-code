@@ -38,17 +38,14 @@
 		<property name="password" value="${batch.jdbc.password}" />
 	</bean>
 
-<!--    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">-->
-<!--        <property name="entityManagerFactory" ref="entityManagerFactory" />-->
-<!--    </bean>-->
-    
     <bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
-    	<property name="brokerURL" value="vm://localhos"/>
+    	<property name="brokerURL" value="vm://localhost"/>
     </bean>
     
     <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
     	<property name="connectionFactory" ref="jmsConnectionFactory"/>
     	<property name="defaultDestination" ref="destination"/>
+    	<property name="receiveTimeout" value="5000"/>
     </bean>
     
     <bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
@@ -69,6 +66,10 @@
 <!--        </property>-->
 <!--    </bean>-->
 <!---->
+<!--    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">-->
+<!--        <property name="entityManagerFactory" ref="entityManagerFactory" />-->
+<!--    </bean>-->
+<!--    -->
 <!--	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">-->
 <!--		<property name="dataSource" ref="dataSource" />-->
 <!--	    <property name="configLocation">-->
@@ -78,16 +79,14 @@
 <!--	        <value>org.hibernate.cfg.AnnotationConfiguration</value>-->
 <!--	    </property>        -->
 <!--		<property name="hibernateProperties">-->
-<!--			<value>-->
-<!--				<![CDATA[-->
-<!--			hibernate.show_sql=true-->
-<!--			hibernate.format_sql=true-->
-<!--			]]>-->
-<!--			</value>-->
+<!--	        <props>-->
+<!--	            <prop key="hibernate.show_sql">true</prop>-->
+<!--	            <prop key="hibernate.format_sql">true</prop>-->
+<!--	        </props>-->
 <!--		</property>-->
 <!--	</bean>-->
 <!---->
-<!--	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" lazy-init="true">-->
+<!--	<bean id="hibernateTransactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" lazy-init="true">-->
 <!--		<property name="sessionFactory" ref="sessionFactory" />-->
 <!--	</bean>-->
 <!---->
@@ -96,10 +95,10 @@
 	</bean>
 	
 	<bean id="javaMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
-		<property name="host" value="smtp.someurl.com"/>
-		<property name="port" value="25"/>
-		<property name="username" value="someusername"/>
-		<property name="password" value="somepassword"/>
+		<property name="host" value="smtp.gmail.com"/>
+		<property name="port" value="587"/>
+		<property name="username" value="prospringbatch"/>
+		<property name="password" value="mminella1"/>
 		<property name="javaMailProperties">
 			<props>
 	            <!-- Use SMTP-AUTH to authenticate to SMTP server -->

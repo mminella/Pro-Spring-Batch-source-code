@@ -18,6 +18,7 @@ public class CustomerItemPreparedStatementSetter implements
         ps.setString(5, customer.getCity());
         ps.setString(6, customer.getState());
         ps.setString(7, customer.getZip());
+        ps.setString(8, customer.getEmail());
 
     }
 }
