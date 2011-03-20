@@ -45,10 +45,10 @@ public class Transaction {
     public void setTradeTimestamp(Date tradeTimestamp) {
         this.tradeTimestamp = tradeTimestamp;
     }
-    public BigDecimal getFee() {
+    public BigDecimal getDollarAmount() {
         return dollarAmount;
     }
-    public void setFee(BigDecimal fee) {
+    public void setDollarAmount(BigDecimal fee) {
         this.dollarAmount = fee;
     }
     public long getTickerId() {

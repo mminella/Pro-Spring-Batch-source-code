@@ -18,8 +18,8 @@ public class CustomerStatementRowMapper implements RowMapper {
     public Customer mapRow(ResultSet resultSet, int arg1) throws SQLException {
         Customer customer = new Customer();
         
-        customer.setFirstName(resultSet.getString("first_name"));
-        customer.setLastName(resultSet.getString("last_name"));
+        customer.setFirstName(resultSet.getString("firstName"));
+        customer.setLastName(resultSet.getString("lastName"));
         customer.setId(resultSet.getLong("customer_id"));
         
         customer.setAccount(buildAccount(resultSet, customer));
@@ -31,10 +31,10 @@ public class CustomerStatementRowMapper implements RowMapper {
     private Account buildAccount(ResultSet resultSet, Customer customer) throws SQLException {
         Account account = new Account();
         
-        account.setAccountNumber(resultSet.getString("account_number"));
-        account.setCashBalance(resultSet.getBigDecimal("cash_balance"));
+        account.setAccountNumber(resultSet.getString("accountNumber"));
+        account.setCashBalance(resultSet.getBigDecimal("cashBalance"));
         account.setCust(customer);
-        account.setTier(PricingTier.convert(resultSet.getInt("pricing_tier")));
+        account.setTier(PricingTier.convert(resultSet.getInt("tier")));
         
         account.setTransactions(buildTransactionList(resultSet));
         
@@ -46,11 +46,11 @@ public class CustomerStatementRowMapper implements RowMapper {
         
         Transaction transaction = new Transaction();
         transaction.setAccountId(resultSet.getLong("account_id"));
-        transaction.setFee(resultSet.getBigDecimal("fee"));
+        transaction.setDollarAmount(resultSet.getBigDecimal("fee"));
         transaction.setId(resultSet.getLong("transaction_id"));
-        transaction.setQuantity(resultSet.getLong("quantity"));
-        transaction.setTicker(resultSet.getString("ticker"));
-        transaction.setTradeTimestamp(resultSet.getDate("trade_timestamp"));
+        transaction.setQuantity(resultSet.getLong("qty"));
+//        transaction.setTicker(resultSet.getString("ticker"));
+        transaction.setTradeTimestamp(resultSet.getDate("executedTime"));
         
         transactions.add(transaction);
         

@@ -10,8 +10,8 @@ public class TransactionDaoJdbc extends JdbcTemplate implements TransactionDao {
     private static final String INSERT_TRANSACTION = "insert into transaction (transactionType, executedTime, dollarAmount, qty, tickerId, account_id) values (?, ?, ?, ?, ?, ?)";
 
     public void saveTransaction(Transaction transaction) {
-        update(INSERT_TRANSACTION, new Object[] { transaction.getType().toIntValue(),
-                transaction.getTradeTimestamp(), transaction.getFee(),
+        update(INSERT_TRANSACTION, new Object[] { transaction.getType().getIntValue(),
+                transaction.getTradeTimestamp(), transaction.getDollarAmount(),
                 transaction.getQuantity(),
                 transaction.getTickerId(),
                 transaction.getAccountId()});

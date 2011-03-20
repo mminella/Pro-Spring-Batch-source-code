@@ -9,7 +9,7 @@ public enum TransactionType {
         this.value = value;
     }
     
-    public int toIntValue() {
+    public int getIntValue() {
         return value;
     }
     

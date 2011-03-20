@@ -58,10 +58,6 @@
 		<beans:property name="accountDao" ref="accountDao"/>
 	</beans:bean>
 	
-	<beans:bean id="transactionDao" class="com.apress.springbatch.statement.dao.impl.TransactionDaoJdbc">
-		<beans:property name="dataSource" ref="dataSource"/>
-	</beans:bean>
-	
 	<beans:bean id="customerDao" class="com.apress.springbatch.statement.dao.impl.CustomerDaoJdbc">
 		<beans:property name="dataSource" ref="dataSource"/>
 	</beans:bean>
@@ -74,25 +70,22 @@
 		<beans:property name="dataSource" ref="dataSource"/>
 	</beans:bean>
 	
-	<beans:bean id="customerService" class="com.apress.springbatch.statement.service.impl.CustomerServiceImpl">
-		<beans:property name="customerDao" ref="customerDao"/>
-		<beans:property name="accountDao" ref="accountDao"/>
+	<beans:bean id="customerImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update customer set firstName = :firstName, lastName = :lastName, address1 = :address.address1, city = :address.city, state = :address.state, zip = :address.zip where ssn = :taxId"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
 	</beans:bean>
-	
-	<beans:bean id="transactionService" class="com.apress.springbatch.statement.service.impl.TransactionServiceImpl">
-		<beans:property name="transactionDao" ref="transactionDao"/>
+
+	<beans:bean id="transactionImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="insert into transaction (transactionType, executedTime, dollarAmount, qty, tickerId, account_id) values (:type.intValue, :tradeTimestamp, :dollarAmount, :quantity, :tickerId, :accountId)"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
 	</beans:bean>
-	
-	<beans:bean id="customerImportWriter" class="org.springframework.batch.item.adapter.ItemWriterAdapter">
-		<beans:property name="targetObject" ref="customerService"/>
-		<beans:property name="targetMethod" value="saveCustomer"/>
-	</beans:bean>
-	
-	<beans:bean id="transactionImportWriter" class="org.springframework.batch.item.adapter.ItemWriterAdapter">
-		<beans:property name="targetObject" ref="transactionService"/>
-		<beans:property name="targetMethod" value="saveTransaction"/>
-	</beans:bean>
-	
+
 	<beans:bean id="customerTransactionItemWriter" class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
 		<beans:property name="classifier">
 			<beans:bean class="org.springframework.batch.classify.SubclassClassifier">
@@ -113,7 +106,7 @@
 	</beans:bean>
 	
 	<beans:bean id="stockFile" class="org.springframework.core.io.FileSystemResource">
-		<beans:constructor-arg value="/Users/mminella/temp/stockFile.csv"/>
+		<beans:constructor-arg value="/output/stockFile.csv"/>
 	</beans:bean>
 
 	<beans:bean id="stockFileWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
@@ -210,7 +203,7 @@
 	<beans:bean id="customerReader"    
 	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
 	    <beans:property name="dataSource" ref="dataSource"/>
-	    <beans:property name="sql" value="select a.id as account_id, a.account_number, a.cash_balance, a.pricing_tier, ad.address_1 as address, ad.city, ad.state, ad.zip, c.id as customer_id, c.first_name, c.last_name, t.id as transaction_id, t.ticker, t.quantity, t.price, t.trade_timestamp, t.fee from customers c inner join addresses ad on c.addresses_id = ad.id left outer join accounts a on a.customers_id = c.id left outer join transactions t on t.accounts_id = a.id order by c.id"/>
+	    <beans:property name="sql" value="select a.id as account_id, a.accountNumber, a.cashBalance, a.tier, c.address1 as address, c.city, c.state, c.zip, c.id as customer_id, c.firstName, c.lastName, t.id as transaction_id, t.qty, t.dollarAmount, t.executedTime, t.fee from customer c left outer join account a on a.customer_id = c.id left outer join transaction t on t.account_id = a.id order by c.id"/>
 	    <beans:property name="rowMapper" ref="customerStatementRowMapper"/>
 	</beans:bean>
 		
@@ -218,6 +211,28 @@
 
 	<beans:bean id="customerStatementReader" class="com.apress.springbatch.statement.reader.CustomerStatementReader">
 		<beans:property name="delegate" ref="customerReader"/>
+	</beans:bean>
+	
+	<beans:bean id="statementFiles" class="org.springframework.core.io.FileSystemResource">
+		<beans:constructor-arg value="/output/statement"/>
+	</beans:bean>
+	
+	<beans:bean id="statementSuffixGenerator" class="com.apress.springbatch.statement.writer.StatementSuffixGenerator"/>
+	
+	<beans:bean id="statementFormatter" class="com.apress.springbatch.statement.writer.StatementFormatter"/>
+
+	<beans:bean id="statementWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<beans:property name="headerCallback">
+			<beans:bean class="com.apress.springbatch.statement.writer.StatementHeaderCallback"/>
+		</beans:property>
+		<beans:property name="lineAggregator" ref="statementFormatter"/>
+	</beans:bean>
+
+	<beans:bean id="statementsWriter" class="org.springframework.batch.item.file.MultiResourceItemWriter">
+		<beans:property name="resource" ref="statementFiles"/>
+		<beans:property name="resourceSuffixCreator" ref="statementSuffixGenerator"/>
+		<beans:property name="itemCountLimitPerResource" value="1"/>
+		<beans:property name="delegate" ref="statementWriter"/>
 	</beans:bean>
 
 	<step id="importCustomerAndTransactionData">
@@ -252,7 +267,7 @@
 	
 	<step id="generateMonthlyStatements">
 		<tasklet>
-			<chunk reader="customerStatementReader" writer="statementWriter" commit-interval="10">
+			<chunk reader="customerStatementReader" writer="statementsWriter" commit-interval="1">
 				<streams>
 					<stream ref="customerReader"/>
 				</streams>
@@ -265,7 +280,7 @@
 		<step id="step2" parent="retrieveStockPrices" next="step3"/>
 		<step id="step3" parent="importStockPrices" next="step4"/>
 		<step id="step4" parent="calculateTiers" next="step5"/>
-		<step id="step5" parent="calculateTransactionFees"/>
+		<step id="step5" parent="calculateTransactionFees" next="step6"/>
 		<step id="step6" parent="generateMonthlyStatements"/>
 <!--		<validator ref="parameterValidator"/>-->
     </job>
