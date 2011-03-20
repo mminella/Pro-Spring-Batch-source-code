@@ -16,6 +16,8 @@ import com.apress.springbatch.statement.domain.PricingTier;
 public class AccountDaoJdbc extends JdbcTemplate implements AccountDao {
 
     private static final String FIND_BY_ACCOUNT_NUMBER = "select * from account a inner join customer c on a.customer_id = c.id where accountNumber = ?";
+    private static final String INSERT_ACCOUNT = "insert into account (accountNumber, cashBalance, tier, Customer_id) values (?, ?, ?, ?)";
+    private static final String UPDATE_ACCOUNT = "update account set accountNumber = ?, cashBalance = ?, tier = ?, Customer_id = ?  where id = ?";
     
     @SuppressWarnings("unchecked")
     public Account findAccountByNumber(String accountNumber) {
@@ -39,8 +41,9 @@ public class AccountDaoJdbc extends JdbcTemplate implements AccountDao {
                         Customer customer = new Customer();
 
                         customer.setId(rs.getLong("id"));
-                        customer.setFirstName(rs.getString("first_name"));
-                        customer.setLastName(rs.getString("last_name"));
+                        customer.setFirstName(rs.getString("firstName"));
+                        customer.setLastName(rs.getString("lastName"));
+                        customer.setTaxId(rs.getString("ssn"));
                         customer.setAddress(buildAddress(rs));
 
                         return customer;
@@ -50,8 +53,7 @@ public class AccountDaoJdbc extends JdbcTemplate implements AccountDao {
                             throws SQLException {
                         Address address = new Address();
 
-                        address.setId(rs.getLong("addresses_id"));
-                        address.setAddress1(rs.getString("address_1"));
+                        address.setAddress1(rs.getString("address1"));
                         address.setCity(rs.getString("city"));
                         address.setState(rs.getString("state"));
                         address.setZip(rs.getString("zip"));
@@ -66,5 +68,12 @@ public class AccountDaoJdbc extends JdbcTemplate implements AccountDao {
             return null;
         }
     }
-
+    
+    public void saveAccount(Account account) {
+        if(account.getId() < 0) {
+            update(INSERT_ACCOUNT, new Object [] {account.getAccountNumber(), account.getCashBalance(), account.getTier(), account.getCust().getId()});
+        } else {
+            update(UPDATE_ACCOUNT, new Object [] {account.getAccountNumber(), account.getCashBalance(), account.getTier(), account.getCust().getId(), account.getId()});
+        }
+    }
 }

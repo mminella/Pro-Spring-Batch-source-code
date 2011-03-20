@@ -1,7 +1,5 @@
 package com.apress.springbatch.statement.processor;
 
-import java.math.BigDecimal;
-
 import org.springframework.batch.item.ItemProcessor;
 
 import com.apress.springbatch.statement.dao.AccountDao;
@@ -22,33 +20,25 @@ public class CustomerLookupItemProcessor implements ItemProcessor<Object, Object
 
     public Object process(Object curItem) throws Exception {
         if(curItem instanceof Customer) {
-            return doCustomerUpdate((Customer) curItem);
+            doCustomerUpdate((Customer) curItem);
         } else if(curItem instanceof Transaction){
-            return doTransactionupdate((Transaction) curItem);
+            doTransactionUpdate((Transaction) curItem);
         } else {
             throw new InvalidItemException("An invalid item was received: " + curItem);
         }
-    }
-
-    private Transaction doTransactionupdate(Transaction curItem) {
-        updateTicker(curItem);
-        updateAccount(curItem);
-        
-        curItem.setType(TransactionType.STOCK);
         
         return curItem;
     }
 
+    private void doTransactionUpdate(Transaction curItem) {
+        updateTicker(curItem);
+        updateAccount(curItem);
+        
+        curItem.setType(TransactionType.STOCK);
+    }
+
     private void updateAccount(Transaction curItem) {
         Account account = accountDao.findAccountByNumber(curItem.getAccountNumber());
-        
-        if(account == null) {
-            account = new Account();
-            account.setAccountNumber(curItem.getAccountNumber());
-            account.setCashBalance(new BigDecimal(0));
-            
-            //TODO set customer on account before saving
-        }
         
         curItem.setAccountId(account.getId());
     }
@@ -67,14 +57,12 @@ public class CustomerLookupItemProcessor implements ItemProcessor<Object, Object
         curItem.setTickerId(ticker.getId());
     }
 
-    private Customer doCustomerUpdate(Customer curCustomer) {
+    private void doCustomerUpdate(Customer curCustomer) {
         Customer storedCustomer = customerDao.findCustomerByTaxId(curCustomer.getTaxId());
+        Account account = accountDao.findAccountByNumber(curCustomer.getAccount().getAccountNumber());
         
-        if(storedCustomer != null) {
-            curCustomer.setId(storedCustomer.getId());
-        }
-        
-        return curCustomer;
+        curCustomer.setId(storedCustomer.getId());
+        curCustomer.setAccount(account);
     }
     
     public void setCustomerDao(CustomerDao customerDao) {

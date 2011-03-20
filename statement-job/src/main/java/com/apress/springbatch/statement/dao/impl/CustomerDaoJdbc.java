@@ -27,8 +27,9 @@ public class CustomerDaoJdbc extends JdbcTemplate implements CustomerDao {
                         Customer customer = new Customer();
 
                         customer.setId(rs.getLong("id"));
-                        customer.setFirstName(rs.getString("first_name"));
-                        customer.setLastName(rs.getString("last_name"));
+                        customer.setFirstName(rs.getString("firstName"));
+                        customer.setLastName(rs.getString("lastName"));
+                        customer.setTaxId(rs.getString("ssn"));
                         customer.setAddress(buildAddress(rs));
 
                         return customer;
@@ -38,8 +39,7 @@ public class CustomerDaoJdbc extends JdbcTemplate implements CustomerDao {
                             throws SQLException {
                         Address address = new Address();
 
-                        address.setId(rs.getLong("addresses_id"));
-                        address.setAddress1(rs.getString("address_1"));
+                        address.setAddress1(rs.getString("address1"));
                         address.setCity(rs.getString("city"));
                         address.setState(rs.getString("state"));
                         address.setZip(rs.getString("zip"));

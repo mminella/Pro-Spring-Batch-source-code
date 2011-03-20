@@ -14,6 +14,7 @@ public class TickerDaoJdbc extends JdbcTemplate implements TickerDao {
     
     private static final String FIND_BY_SYMBOL = "select * from ticker t where ticker = ?";
     private static final String SAVE_TICKER = "insert into ticker (ticker, currentPrice) values (?,?)";
+    private static final String FIND_ALL = "select distinct ticker from ticker order by ticker limit ?, ?";
     
     @SuppressWarnings("unchecked")
     public Ticker findTickerBySymbol(String symbol) {
@@ -39,5 +40,10 @@ public class TickerDaoJdbc extends JdbcTemplate implements TickerDao {
 
     public void saveTicker(Ticker ticker) {
         update(SAVE_TICKER, new Object [] {ticker.getTicker(), ticker.getPrice()});
+    }
+    
+    @SuppressWarnings("unchecked")
+    public List<String> getTickersPaged(int page, int pageSize) {
+        return queryForList(FIND_ALL, new Object [] {(page * pageSize), pageSize}, String.class);
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Account {
     
-    private long id;
+    private long id = -1;
     private String accountNumber;
     private Customer cust;
     private BigDecimal cashBalance;

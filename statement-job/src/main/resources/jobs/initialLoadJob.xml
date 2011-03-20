@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans:beans xmlns="http://www.springframework.org/schema/batch" 
+       xmlns:beans="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+                    http://www.springframework.org/schema/batch 
+	                    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+    <beans:import resource="../launch-context.xml"/> 
+
+	<beans:bean id="customerTransactionFile" class="org.springframework.core.io.FileSystemResource">
+		<beans:constructor-arg value="/Users/mminella/temp/customers.csv"/>
+	</beans:bean>
+	
+    <beans:bean id="customerFieldSetMapper" class="com.apress.springbatch.statement.reader.CustomerFieldSetMapper"/>
+	
+    <beans:bean id="transactionFieldSetMapper" class="com.apress.springbatch.statement.reader.TransactionFieldSetMapper"/>
+	
+	<beans:bean id="customerTransactionLineMapper" class="com.apress.springbatch.statement.reader.RegularExpressionLineMapper">
+		<beans:property name="lineTokenizers">
+			<beans:map>
+				<beans:entry key="^\d+,[A-Z][a-zA-Z]+,[A-Z][a-zA-Z]+,.*" value-ref="customerLineTokenizer"/>
+				<beans:entry key="^\d+,[A-Z\.\ ]+,\d+.*" value-ref="transactionLineTokenizer"/>
+			</beans:map>
+		</beans:property>
+		<beans:property name="fieldSetMappers">
+			<beans:map>
+				<beans:entry key="^\d+,[A-Z][a-zA-Z]+,[A-Z][a-zA-Z]+,.*" value-ref="customerFieldSetMapper"/>
+				<beans:entry key="^\d+,[A-Z\.\ ]+,\d+.*" value-ref="transactionFieldSetMapper"/>
+			</beans:map>
+		</beans:property>
+	</beans:bean>
+	
+     <beans:bean id="customerLineTokenizer" class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names" value="taxId,firstName,lastName,address,city,state,zip,accountNumber"/>
+        <beans:property name="delimiter" value=","/>
+    </beans:bean>
+	
+     <beans:bean id="transactionLineTokenizer" class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names" value="accountNumber,stockTicker,price,quantity,timestamp"/>
+        <beans:property name="delimiter" value=","/>
+    </beans:bean>
+	
+	<beans:bean id="customerTransactionReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<beans:property name="resource" ref="customerTransactionFile"/>
+		<beans:property name="lineMapper" ref="customerTransactionLineMapper"/>
+	</beans:bean>
+	
+	<beans:bean id="customerTransactionItemWriter" class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
+		<beans:property name="classifier">
+			<beans:bean class="org.springframework.batch.classify.SubclassClassifier">
+				<beans:property name="typeMap">
+					<beans:map>
+						<beans:entry key="com.apress.springbatch.statement.domain.Customer" value-ref="jdbcBatchWriter"/>
+					</beans:map>
+				</beans:property>
+			</beans:bean>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="jdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="sql" value="insert into account (accountNumber, cashBalance, tier, customer_id) values (:account.accountNumber, RAND() * 10000, NULL, (select id from customer where ssn = :taxId ))"/>
+		<beans:property name="itemSqlParameterSourceProvider">
+			<beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="customerJdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="sql" value="insert into customer (ssn, firstName, lastName, address, city, state, zip) values (:taxId, :firstName, :lastName, :address.address, :address.city, :address.state, :address.zip ))"/>
+		<beans:property name="itemSqlParameterSourceProvider">
+			<beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+		</beans:property>
+	</beans:bean>
+
+	<step id="generateInsertStatements">
+		<tasklet>
+			<chunk reader="customerTransactionReader" writer="jdbcBatchWriter" commit-interval="10" skip-limit="100000">
+				<skippable-exception-classes>
+					<include class="java.lang.RuntimeException"/>
+				</skippable-exception-classes>
+			</chunk>
+			<no-rollback-exception-classes>
+				<include class="java.lang.RuntimeException"/>
+			</no-rollback-exception-classes>
+		</tasklet>
+	</step>
+	
+	<job id="insertStatementsJob">
+		<step id="step1" parent="generateInsertStatements"/>
+    </job>
+</beans:beans>
+

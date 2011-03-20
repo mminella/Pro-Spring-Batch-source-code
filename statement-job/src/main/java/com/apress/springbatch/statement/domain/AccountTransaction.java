@@ -42,6 +42,6 @@ public class AccountTransaction extends Transaction {
     }
     @Override
     public String toString() {
-        return accountNumber + ":" + getTicker() + ":" + getTradeTimestamp().getTime() + ":" + fee; 
+        return getId() + ":" + accountNumber + ":" + getTicker() + ":" + getTradeTimestamp().getTime() + ":" + fee; 
     }
 }

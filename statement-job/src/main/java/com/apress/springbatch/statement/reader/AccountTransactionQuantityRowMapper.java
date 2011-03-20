@@ -12,7 +12,7 @@ public class AccountTransactionQuantityRowMapper implements RowMapper {
     public AccountTransactionQuantity mapRow(ResultSet resultSet, int arg1) throws SQLException {
         AccountTransactionQuantity qty = new AccountTransactionQuantity();
         
-        qty.setAccountNumber(resultSet.getString("account_number"));
+        qty.setAccountNumber(resultSet.getString("accountNumber"));
         qty.setTransactionCount(resultSet.getLong("qty"));
         
         return qty;
