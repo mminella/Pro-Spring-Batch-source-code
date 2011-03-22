@@ -203,14 +203,15 @@
 	<beans:bean id="customerReader"    
 	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
 	    <beans:property name="dataSource" ref="dataSource"/>
-	    <beans:property name="sql" value="select a.id as account_id, a.accountNumber, a.cashBalance, a.tier, c.address1 as address, c.city, c.state, c.zip, c.id as customer_id, c.firstName, c.lastName, t.id as transaction_id, t.qty, t.dollarAmount, t.executedTime, t.fee from customer c left outer join account a on a.customer_id = c.id left outer join transaction t on t.account_id = a.id order by c.id"/>
+	    <beans:property name="sql" value="select a.id as account_id, a.accountNumber, a.cashBalance, a.tier, c.address1 as address, c.city, c.state, c.zip, c.id as customer_id, c.firstName, c.lastName from customer c left outer join account a on a.customer_id = c.id order by c.id"/>
 	    <beans:property name="rowMapper" ref="customerStatementRowMapper"/>
 	</beans:bean>
 		
 	<beans:bean id="customerStatementRowMapper" class="com.apress.springbatch.statement.reader.CustomerStatementRowMapper"/>
 
 	<beans:bean id="customerStatementReader" class="com.apress.springbatch.statement.reader.CustomerStatementReader">
-		<beans:property name="delegate" ref="customerReader"/>
+		<beans:property name="customerReader" ref="customerReader"/>
+		<beans:property name="tickerDao" ref="tickerDao"/>
 	</beans:bean>
 	
 	<beans:bean id="statementFiles" class="org.springframework.core.io.FileSystemResource">
@@ -237,7 +238,7 @@
 
 	<step id="importCustomerAndTransactionData">
 		<tasklet>
-			<chunk reader="customerTransactionReader" processor="customerLookupItemProcessor" writer="customerTransactionItemWriter" commit-interval="10"/>
+			<chunk reader="customerTransactionReader" processor="customerLookupItemProcessor" writer="customerTransactionItemWriter" commit-interval="100"/>
 		</tasklet>
 	</step>
 
@@ -249,19 +250,19 @@
 	
 	<step id="importStockPrices">
 		<tasklet>
-			<chunk reader="stockFileReader" writer="tickerUpdateWriter" commit-interval="10"/>
+			<chunk reader="stockFileReader" writer="tickerUpdateWriter" commit-interval="100"/>
 		</tasklet>
 	</step>
 	
 	<step id="calculateTiers">
 		<tasklet>
-			<chunk reader="accountTransactionQtyItemReader" processor="pricingTiersItemProcessor" writer="tiersUpdateWriter" commit-interval="10"/>
+			<chunk reader="accountTransactionQtyItemReader" processor="pricingTiersItemProcessor" writer="tiersUpdateWriter" commit-interval="100"/>
 		</tasklet>
 	</step>
 	
 	<step id="calculateTransactionFees">
 		<tasklet>
-			<chunk reader="transactionPricingItemReader" processor="feesItemProcessor" writer="applyFeeWriter" commit-interval="10"/>
+			<chunk reader="transactionPricingItemReader" processor="feesItemProcessor" writer="applyFeeWriter" commit-interval="100"/>
 		</tasklet>
 	</step>
 	
@@ -282,7 +283,6 @@
 		<step id="step4" parent="calculateTiers" next="step5"/>
 		<step id="step5" parent="calculateTransactionFees" next="step6"/>
 		<step id="step6" parent="generateMonthlyStatements"/>
-<!--		<validator ref="parameterValidator"/>-->
     </job>
 </beans:beans>
 
