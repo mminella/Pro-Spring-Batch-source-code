@@ -13,7 +13,7 @@ public enum TransactionType {
         return value;
     }
     
-    public TransactionType fromIntValue(int value) {
+    public static TransactionType fromIntValue(int value) {
         switch (value) {
         case 0:
             return STOCK;

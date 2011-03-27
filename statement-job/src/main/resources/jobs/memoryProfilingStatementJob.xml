@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans:beans xmlns="http://www.springframework.org/schema/batch" 
+       xmlns:beans="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	   xmlns:util="http://www.springframework.org/schema/beans" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+       				http://www.springframework.org/schema/util 
+					http://www.springframework.org/schema/util/spring-util.xsd
+                    http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+    <beans:import resource="../launch-context.xml"/> 
+
+	<beans:bean id="idIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
+	
+	<beans:bean id="customerTransactionFile" class="org.springframework.core.io.FileSystemResource">
+		<beans:constructor-arg value="/Users/mminella/temp/test.csv"/>
+	</beans:bean>
+	
+    <beans:bean id="customerFieldSetMapper" class="com.apress.springbatch.statement.reader.CustomerFieldSetMapper"/>
+	
+    <beans:bean id="transactionFieldSetMapper" class="com.apress.springbatch.statement.reader.TransactionFieldSetMapper"/>
+	
+	<beans:bean id="customerTransactionLineMapper" class="com.apress.springbatch.statement.reader.RegularExpressionLineMapper">
+		<beans:property name="lineTokenizers">
+			<beans:map>
+				<beans:entry key="^\d+,[A-Z][a-zA-Z]+,[A-Z][a-zA-Z]+,.*" value-ref="customerLineTokenizer"/>
+				<beans:entry key="^\d+,[A-Z\.\ ]+,\d+.*" value-ref="transactionLineTokenizer"/>
+			</beans:map>
+		</beans:property>
+		<beans:property name="fieldSetMappers">
+			<beans:map>
+				<beans:entry key="^\d+,[A-Z][a-zA-Z]+,[A-Z][a-zA-Z]+,.*" value-ref="customerFieldSetMapper"/>
+				<beans:entry key="^\d+,[A-Z\.\ ]+,\d+.*" value-ref="transactionFieldSetMapper"/>
+			</beans:map>
+		</beans:property>
+	</beans:bean>
+	
+     <beans:bean id="customerLineTokenizer" class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names" value="taxId,firstName,lastName,address,city,state,zip,accountNumber"/>
+        <beans:property name="delimiter" value=","/>
+    </beans:bean>
+	
+     <beans:bean id="transactionLineTokenizer" class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names" value="accountNumber,stockTicker,price,quantity,timestamp"/>
+        <beans:property name="delimiter" value=","/>
+    </beans:bean>
+	
+	<beans:bean id="customerTransactionReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<beans:property name="resource" ref="customerTransactionFile"/>
+		<beans:property name="lineMapper" ref="customerTransactionLineMapper"/>
+	</beans:bean>
+	
+	<beans:bean id="customerLookupItemProcessor" class="com.apress.springbatch.statement.processor.CustomerLookupItemProcessor">
+		<beans:property name="customerDao" ref="customerDao"/>
+		<beans:property name="tickerDao" ref="tickerDao"/>
+		<beans:property name="accountDao" ref="accountDao"/>
+	</beans:bean>
+	
+	<beans:bean id="customerDao" class="com.apress.springbatch.statement.dao.impl.CustomerDaoJdbc">
+		<beans:property name="dataSource" ref="dataSource"/>
+	</beans:bean>
+	
+	<beans:bean id="tickerDao" class="com.apress.springbatch.statement.dao.impl.TickerDaoJdbc">
+		<beans:property name="dataSource" ref="dataSource"/>
+	</beans:bean>
+	
+	<beans:bean id="accountDao" class="com.apress.springbatch.statement.dao.impl.AccountDaoJdbc">
+		<beans:property name="dataSource" ref="dataSource"/>
+	</beans:bean>
+	
+	<beans:bean id="customerImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update customer set firstName = :firstName, lastName = :lastName, address1 = :address.address1, city = :address.city, state = :address.state, zip = :address.zip where ssn = :taxId"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+	<beans:bean id="transactionImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="insert into transaction (transactionType, executedTime, dollarAmount, qty, tickerId, account_id) values (:type.intValue, :tradeTimestamp, :dollarAmount, :quantity, :tickerId, :accountId)"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+	<beans:bean id="customerTransactionItemWriter" class="org.springframework.batch.item.support.ClassifierCompositeItemWriter">
+		<beans:property name="classifier">
+			<beans:bean class="org.springframework.batch.classify.SubclassClassifier">
+				<beans:property name="typeMap">
+					<beans:map>
+						<beans:entry key="com.apress.springbatch.statement.domain.Customer" value-ref="customerImportWriter"/>
+						<beans:entry key="com.apress.springbatch.statement.domain.Transaction" value-ref="transactionImportWriter"/>
+					</beans:map>
+				</beans:property>
+			</beans:bean>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean id="stockPriceWebServiceReader" class="com.apress.springbatch.statement.reader.UrlReader">
+		<beans:property name="host" value="download.finance.yahoo.com"/>
+		<beans:property name="path" value="/d/quotes.csv"/>
+		<beans:property name="tickersDao" ref="tickerDao"/>
+	</beans:bean>
+	
+	<beans:bean id="stockFile" class="org.springframework.core.io.FileSystemResource">
+		<beans:constructor-arg value="/output/stockFile.csv"/>
+	</beans:bean>
+
+	<beans:bean id="stockFileWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+	    <beans:property name="resource" ref="stockFile" />
+		<beans:property name="lineAggregator">
+			<beans:bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator"/>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean id="stockFileReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+	    <beans:property name="resource" ref="stockFile" />
+	    <beans:property name="lineMapper">
+	        <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+	            <beans:property name="lineTokenizer">
+	                <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+	                    <beans:property name="names"
+	                        value="ticker,price"/>
+	                    <beans:property name="delimiter" value=","/>
+	                </beans:bean>
+	            </beans:property>
+	            <beans:property name="fieldSetMapper">
+	                <beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+	                    <beans:property name="prototypeBeanName" value="stock"/>
+	                </beans:bean>
+	            </beans:property>
+	        </beans:bean>
+	    </beans:property>
+	</beans:bean>
+	
+	<beans:bean id="stock" class="com.apress.springbatch.statement.domain.Ticker" scope="prototype"/>
+
+	<beans:bean id="tickerUpdateWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update ticker set currentPrice = :price where ticker = :ticker"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+<!--	<beans:bean id="accountTransactionQtyItemReader"    -->
+<!--	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">-->
+<!--	    <beans:property name="dataSource" ref="dataSource"/>-->
+<!--	    <beans:property name="sql" value="select a.accountNumber, count(*) as qty from account a inner join transaction t on t.account_id = a.id group by a.accountNumber"/>-->
+<!--	    <beans:property name="rowMapper" ref="accountTransactionQtyRowMapper"/>-->
+<!--	</beans:bean>-->
+<!--		-->
+<!--	<beans:bean id="accountTransactionQtyRowMapper" class="com.apress.springbatch.statement.reader.AccountTransactionQuantityRowMapper"/>-->
+
+	<beans:bean id="accountService" class="com.apress.springbatch.statement.service.impl.AccountServiceImpl">
+		<beans:property name="accountDao" ref="accountDao"/>
+	</beans:bean>
+	
+	<beans:bean id="accountReader" class="com.apress.springbatch.statement.reader.AccountReader">
+		<beans:property name="accountService" ref="accountService"/>
+	</beans:bean>
+	
+	<beans:bean id="pricingTiersItemProcessor" class="com.apress.springbatch.statement.processor.PricingTierItemProcessor"/>
+
+	<beans:bean id="tiersUpdateWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update account set tier = :tier.value where accountNumber = :accountNumber"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+	<beans:bean id="transactionPricingItemReader" class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select a.id as accountId, a.accountNumber, t.id as transactionId, t.qty, tk.ticker, a.tier, t.executedTime, t.dollarAmount from account a inner join transaction t on a.id = t.account_id inner join ticker tk on t.tickerId = tk.id order by t.executedTime"/>
+	    <beans:property name="rowMapper" ref="transactionPricingRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="transactionPricingRowMapper" class="com.apress.springbatch.statement.reader.AccountTransactionRowMapper"/>
+	
+	<beans:bean id="feesItemProcessor" class="com.apress.springbatch.statement.processor.FeesItemProcessor"/>
+	
+	<beans:bean id="feesUpdateWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update transaction set fee = :fee where id = :id"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+	<beans:bean id="cashBalanceUpdateWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update account set cashBalance = (cashBalance - :fee) where accountNumber = :accountNumber"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+	
+	<beans:bean id="applyFeeWriter" class="org.springframework.batch.item.support.CompositeItemWriter">
+        <beans:property name="delegates">
+            <util:list>
+                <util:ref bean="feesUpdateWriter"/>
+                <util:ref bean="cashBalanceUpdateWriter"/>
+            </util:list>
+        </beans:property>
+	</beans:bean>
+
+	<beans:bean id="customerReader"    
+	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select a.id as account_id, a.accountNumber, a.cashBalance, a.tier, c.address1 as address, c.city, c.state, c.zip, c.id as customer_id, c.firstName, c.lastName from customer c left outer join account a on a.customer_id = c.id order by c.id"/>
+	    <beans:property name="rowMapper" ref="customerStatementRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="customerStatementRowMapper" class="com.apress.springbatch.statement.reader.CustomerStatementRowMapper"/>
+
+	<beans:bean id="customerStatementReader" class="com.apress.springbatch.statement.reader.CustomerStatementReader">
+		<beans:property name="customerReader" ref="customerReader"/>
+		<beans:property name="tickerDao" ref="tickerDao"/>
+	</beans:bean>
+	
+	<beans:bean id="statementFiles" class="org.springframework.core.io.FileSystemResource">
+		<beans:constructor-arg value="/output/statement"/>
+	</beans:bean>
+	
+	<beans:bean id="statementSuffixGenerator" class="com.apress.springbatch.statement.writer.StatementSuffixGenerator"/>
+	
+	<beans:bean id="statementFormatter" class="com.apress.springbatch.statement.writer.StatementFormatter"/>
+
+	<beans:bean id="statementWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<beans:property name="headerCallback">
+			<beans:bean class="com.apress.springbatch.statement.writer.StatementHeaderCallback"/>
+		</beans:property>
+		<beans:property name="lineAggregator" ref="statementFormatter"/>
+	</beans:bean>
+
+	<beans:bean id="statementsWriter" class="org.springframework.batch.item.file.MultiResourceItemWriter">
+		<beans:property name="resource" ref="statementFiles"/>
+		<beans:property name="resourceSuffixCreator" ref="statementSuffixGenerator"/>
+		<beans:property name="itemCountLimitPerResource" value="1"/>
+		<beans:property name="delegate" ref="statementWriter"/>
+	</beans:bean>
+
+	<step id="importCustomerAndTransactionData">
+		<tasklet>
+			<chunk reader="customerTransactionReader" processor="customerLookupItemProcessor" writer="customerTransactionItemWriter" commit-interval="100"/>
+		</tasklet>
+	</step>
+
+	<step id="retrieveStockPrices">
+		<tasklet>
+			<chunk reader="stockPriceWebServiceReader" writer="stockFileWriter" commit-interval="1"/>
+		</tasklet>
+	</step>
+	
+	<step id="importStockPrices">
+		<tasklet>
+			<chunk reader="stockFileReader" writer="tickerUpdateWriter" commit-interval="100"/>
+		</tasklet>
+	</step>
+	
+	<step id="calculateTiers">
+		<tasklet>
+			<chunk reader="accountReader" processor="pricingTiersItemProcessor" writer="tiersUpdateWriter" commit-interval="100"/>
+		</tasklet>
+	</step>
+	
+	<step id="calculateTransactionFees">
+		<tasklet>
+			<chunk reader="transactionPricingItemReader" processor="feesItemProcessor" writer="applyFeeWriter" commit-interval="100"/>
+		</tasklet>
+	</step>
+	
+	<step id="generateMonthlyStatements">
+		<tasklet>
+			<chunk reader="customerStatementReader" writer="statementsWriter" commit-interval="1">
+				<streams>
+					<stream ref="customerReader"/>
+				</streams>
+			</chunk>
+		</tasklet>
+	</step>
+	
+	<job id="statementJob" incrementer="idIncrementer">
+		<step id="step1" parent="importCustomerAndTransactionData" next="step2"/>
+		<step id="step2" parent="retrieveStockPrices" next="step3"/>
+		<step id="step3" parent="importStockPrices" next="step4"/>
+		<step id="step4" parent="calculateTiers" next="step5"/>
+		<step id="step5" parent="calculateTransactionFees" next="step6"/>
+		<step id="step6" parent="generateMonthlyStatements"/>
+    </job>
+</beans:beans>
+

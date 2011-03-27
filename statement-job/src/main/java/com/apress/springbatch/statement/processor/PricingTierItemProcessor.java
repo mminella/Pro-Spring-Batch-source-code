@@ -2,19 +2,19 @@ package com.apress.springbatch.statement.processor;
 
 import org.springframework.batch.item.ItemProcessor;
 
-import com.apress.springbatch.statement.domain.AccountTransactionQuantity;
+import com.apress.springbatch.statement.domain.Account;
 import com.apress.springbatch.statement.domain.PricingTier;
 
-public class PricingTierItemProcessor implements ItemProcessor<AccountTransactionQuantity, AccountTransactionQuantity> {
+public class PricingTierItemProcessor implements ItemProcessor<Account, Account> {
 
-    public AccountTransactionQuantity process(AccountTransactionQuantity atq)
+    public Account process(Account atq)
             throws Exception {
         
-        if(atq.getTransactionCount() <= 1000) {
+        if(atq.getTransactions().size() <= 1000) {
             atq.setTier(PricingTier.I);
-        } else if(atq.getTransactionCount() > 1000 && atq.getTransactionCount() <= 100000) {
+        } else if(atq.getTransactions().size() > 1000 && atq.getTransactions().size() <= 100000) {
             atq.setTier(PricingTier.II);
-        } else if(atq.getTransactionCount() > 100000 && atq.getTransactionCount() <= 1000000) {
+        } else if(atq.getTransactions().size() > 100000 && atq.getTransactions().size() <= 1000000) {
             atq.setTier(PricingTier.III);
         } else {
             atq.setTier(PricingTier.IV);

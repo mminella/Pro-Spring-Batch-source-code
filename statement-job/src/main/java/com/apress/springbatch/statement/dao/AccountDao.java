@@ -1,9 +1,11 @@
 package com.apress.springbatch.statement.dao;
 
+import java.util.List;
+
 import com.apress.springbatch.statement.domain.Account;
 
 public interface AccountDao {
     Account findAccountByNumber(String accountNumber);
-
-    public abstract void saveAccount(Account account);
+    void saveAccount(Account account);
+    List<Account> loadAccounts();
 }
