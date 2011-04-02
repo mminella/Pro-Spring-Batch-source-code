@@ -1,7 +1,7 @@
 package com.apress.springbatch.statement.domain;
 
 public enum PricingTier {
-   I(1), II(2), III(3), IV(4), UNDEFINED(0);
+   UNDEFINED(0), I(1), II(2), III(3), IV(4);
    
    private int value;
    
@@ -13,8 +13,12 @@ public enum PricingTier {
        return value;
    }
    
-   public static PricingTier convert(int i) {
-       return values()[i - 1];
+   public static PricingTier convert(Integer i) {
+       if(i != null && i >= 0) {
+           return values()[i];
+       } else {
+           return UNDEFINED;
+       }
    }
    
    public String toString() {

@@ -165,9 +165,9 @@
 	    </beans:property>
 	</beans:bean>
 
-	<beans:bean id="transactionPricingItemReader" class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	<beans:bean id="transactionPricingItemReader" class="org.springframework.batch.item.database.JdbcCursorItemReader" scope="step">
 	    <beans:property name="dataSource" ref="dataSource"/>
-	    <beans:property name="sql" value="select a.id as accountId, a.accountNumber, t.id as transactionId, t.qty, tk.ticker, a.tier, t.executedTime, t.dollarAmount from account a inner join transaction t on a.id = t.account_id inner join ticker tk on t.tickerId = tk.id order by t.executedTime"/>
+	    <beans:property name="sql" value="select a.id as accountId, a.accountNumber, t.id as transactionId, t.qty, tk.ticker, a.tier, t.executedTime, t.dollarAmount from account a inner join transaction t on a.id = t.account_id inner join ticker tk on t.tickerId = tk.id and t.processed = false and t.jobId = #{jobParameters[run.id]} order by t.executedTime"/>
 	    <beans:property name="rowMapper" ref="transactionPricingRowMapper"/>
 	</beans:bean>
 		
@@ -256,15 +256,36 @@
 	
 	<step id="calculateTiers">
 		<tasklet>
-			<chunk reader="accountTransactionQtyItemReader" processor="pricingTiersItemProcessor" writer="tiersUpdateWriter" commit-interval="100"/>
+			<chunk reader="accountTransactionQtyItemReader" processor="pricingTiersItemProcessor" writer="tiersUpdateWriter" commit-interval="10"/>
 		</tasklet>
 	</step>
 	
 	<step id="calculateTransactionFees">
-		<tasklet>
+		<tasklet task-executor="taskExecutor">
 			<chunk reader="transactionPricingItemReader" processor="feesItemProcessor" writer="applyFeeWriter" commit-interval="100"/>
+			<listeners>
+				<listener ref="stagingStepListener"/>
+				<listener ref="stagingChunkUpdater"/>
+			</listeners>
 		</tasklet>
 	</step>
+
+	<beans:bean id="stagingStepListener" class="com.apress.springbatch.statement.listener.StagingStepListener" scope="step">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="tableName" value="transaction"/>
+		<beans:property name="whereClause" value="where jobId is null and processed is null"/>
+		<beans:property name="jobId" value="#{jobParameters[run.id]}"/>
+	</beans:bean>
+
+	<beans:bean id="stagingChunkUpdater" class="com.apress.springbatch.statement.listener.StagingChunkUpdater" scope="step">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="tableName" value="transaction"/>
+		<beans:property name="whereClause" value="where id = ?"/>
+	</beans:bean>
+
+	<beans:bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor">
+		<beans:property name="concurrencyLimit" value="10"/>
+	</beans:bean>
 	
 	<step id="generateMonthlyStatements">
 		<tasklet>

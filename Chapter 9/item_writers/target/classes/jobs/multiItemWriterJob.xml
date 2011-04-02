@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:util="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+					http://www.springframework.org/schema/util 
+					http://www.springframework.org/schema/util/spring-util.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+
+	<beans:bean id="customerFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+	    <beans:constructor-arg value="#{jobParameters[customerFile]}"/>
+	</beans:bean>
+	
+	<beans:bean id="customerFileReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<beans:property name="resource" ref="customerFile"/>
+	    <beans:property name="lineMapper">
+	        <beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+	            <beans:property name="lineTokenizer">
+	                <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+	                    <beans:property name="names"
+	                        value="firstName,middleInitial,lastName,address,city,state,zip,email"/>
+	                    <beans:property name="delimiter" value=","/>
+	                </beans:bean>
+	            </beans:property>
+	            <beans:property name="fieldSetMapper">
+	                <beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+	                	<beans:property name="prototypeBeanName" value="customer"/>
+ 	                </beans:bean>
+	            </beans:property>
+	        </beans:bean>
+	    </beans:property>
+	</beans:bean>
+		
+	<beans:bean id="customer" class="com.apress.springbatch.chapter9.Customer" scope="prototype"/>
+	
+	<beans:bean id="outputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+		<beans:constructor-arg value="#{jobParameters[outputFile]}"/>
+	</beans:bean>
+
+	<beans:bean id="xmlOutputWriter" class="org.springframework.batch.item.xml.StaxEventItemWriter">
+    	<beans:property name="resource" ref="outputFile" />
+    	<beans:property name="marshaller" ref="customerMarshaller" />
+    	<beans:property name="rootTagName" value="customers" />
+	</beans:bean>
+	
+	<beans:bean id="customerMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller">
+	    <beans:property name="aliases">
+	        <util:map>
+	            <beans:entry key="customer" value="com.apress.springbatch.chapter9.Customer" />
+	        </util:map>
+	    </beans:property>
+	</beans:bean>
+	
+	<beans:bean id="jdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="sql" value="insert into customer (firstName, middleInitial, lastName, address, city, state, zip, email) values (?, ?, ?, ?, ?, ?, ?, ?)"/>
+		<beans:property name="itemPreparedStatementSetter" ref="preparedStatementSetter"/>
+	</beans:bean>
+	
+	<beans:bean id="preparedStatementSetter" class="com.apress.springbatch.chapter9.CustomerItemPreparedStatementSetter"/>
+	
+	<beans:bean id="customerCompositeWriter" class="org.springframework.batch.item.support.CompositeItemWriter">
+		<beans:property name="delegates">
+			<util:list>
+				<util:ref bean="xmlOutputWriter"/>
+				<util:ref bean="jdbcBatchWriter"/>
+			</util:list>
+		</beans:property>
+	</beans:bean>
+	
+	<step id="formatFileStep">
+		<tasklet>
+			<chunk reader="customerFileReader" writer="customerCompositeWriter" commit-interval="10">
+<!--            	<streams>-->
+<!--                	<stream ref="flatFileOutputWriter"/>-->
+<!--            	</streams>-->
+			</chunk>
+		</tasklet>
+	</step>
+
+	<job id="formatJob">
+		<step id="step1" parent="formatFileStep"/>
+	</job>
+</beans:beans>

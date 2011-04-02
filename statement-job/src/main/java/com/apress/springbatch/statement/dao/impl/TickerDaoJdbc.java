@@ -67,7 +67,13 @@ public class TickerDaoJdbc extends JdbcTemplate implements TickerDao {
     }
 
     public BigDecimal getTotalValueForCustomer(long id) {
-        return (BigDecimal) queryForObject(TOTAL_VALUE, new Object [] {id}, BigDecimal.class);
+        BigDecimal result = (BigDecimal) queryForObject(TOTAL_VALUE, new Object [] {id}, BigDecimal.class);
+        
+        if(result == null) {
+            result = new BigDecimal("0");
+        }
+        
+        return result;
     }
 
     @SuppressWarnings("unchecked")

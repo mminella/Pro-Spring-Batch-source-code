@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:util="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+					http://www.springframework.org/schema/util 
+					http://www.springframework.org/schema/util/spring-util.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+
+	<beans:bean id="customerFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+	    <beans:constructor-arg value="#{jobParameters[customerFile]}"/>
+	</beans:bean>
+	
+	<beans:bean id="customerItemReader"    
+	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select * from customer"/>
+	    <beans:property name="rowMapper" ref="customerRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="customerRowMapper" class="com.apress.springbatch.chapter9.CustomerRowMapper"/>
+
+	<beans:bean id="jdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<beans:property name="dataSource" ref="dataSource"/>
+		<beans:property name="sql" value="insert into customer (firstName, middleInitial, lastName, address, city, state, zip, email) values (?, ?, ?, ?, ?, ?, ?, ?)"/>
+		<beans:property name="itemPreparedStatementSetter" ref="preparedStatementSetter"/>
+	</beans:bean>
+	
+	<beans:bean id="preparedStatementSetter" class="com.apress.springbatch.chapter9.CustomerItemPreparedStatementSetter"/>
+	
+	<beans:bean id="simpleEmailWriter" class="org.springframework.batch.item.mail.SimpleMailMessageItemWriter">
+		<beans:property name="mailSender" ref="javaMailSender"/>
+	</beans:bean>
+	
+	<beans:bean id="emailConverter" class="com.apress.springbatch.chapter9.CustomerEmailConverter"/>
+	
+	<step id="importFileStep">
+		<tasklet>
+			<chunk reader="customerFileReader" writer="jdbcBatchWriter" commit-interval="10"/>
+		</tasklet>
+	</step>
+
+	<step id="emailCustomersStep">
+		<tasklet>
+			<chunk reader="customerItemReader" processor="emailConverter" writer="simpleEmailWriter" commit-interval="10"/>
+		</tasklet>
+	</step>
+
+	<job id="formatJob">
+		<step id="step1" parent="importFileStep" next="step2"/>
+		<step id="step2" parent="emailCustomersStep"/>
+	</job>
+</beans:beans>

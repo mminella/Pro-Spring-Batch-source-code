@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:util="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+					http://www.springframework.org/schema/util 
+					http://www.springframework.org/schema/util/spring-util.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+	
+	<beans:bean id="customerItemReader"    
+	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select * from customer"/>
+	    <beans:property name="rowMapper" ref="customerRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="customerRowMapper" class="com.apress.springbatch.chapter9.CustomerRowMapper"/>
+
+	<beans:bean id="outputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+		<beans:constructor-arg value="#{jobParameters[outputFile]}"/>
+	</beans:bean>
+	
+	<beans:bean id="customerWriter" class="com.apress.springbatch.chapter9.CustomerWriterWithFooter">
+		<beans:property name="delegate" ref="flatFileOutputWriter"/>
+	</beans:bean>
+
+	<beans:bean id="flatFileOutputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<beans:property name="lineAggregator" ref="formattedLineAggregator"/>
+		<beans:property name="appendAllowed" value="true"/>
+		<beans:property name="footerCallback" ref="customerWriter"/>
+	</beans:bean>
+	
+	<beans:bean id="formattedLineAggregator" class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
+		<beans:property name="fieldExtractor">
+			<beans:bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+				<beans:property name="names" value="firstName,lastName,address,city,state,zip"/>
+			</beans:bean>
+		</beans:property>
+		<beans:property name="format" value="%s %s lives at %s %s in %s, %s."/>
+	</beans:bean>
+	
+	<beans:bean id="multiResourceItemWriter" class="org.springframework.batch.item.file.MultiResourceItemWriter">
+		<beans:property name="resource" ref="outputFile"/>
+		<beans:property name="delegate" ref="customerWriter"/>
+		<beans:property name="itemCountLimitPerResource" value="10"/>
+	</beans:bean>
+	
+	<step id="formatFileStep">
+		<tasklet>
+			<chunk reader="customerItemReader" writer="multiResourceItemWriter" commit-interval="10"/>
+		</tasklet>
+	</step>
+
+	<job id="formatJob">
+		<step id="step1" parent="formatFileStep"/>
+	</job>
+</beans:beans>
