@@ -10,7 +10,7 @@
                     http://www.springframework.org/schema/batch 
 	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
 
-    <beans:import resource="../launch-context.xml"/> 
+<!--    <beans:import resource="../launch-context.xml"/> -->
 
 	<beans:bean id="idIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
 	

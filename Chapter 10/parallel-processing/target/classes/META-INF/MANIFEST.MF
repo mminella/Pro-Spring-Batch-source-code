@@ -1,0 +1,34 @@
+Manifest-Version: 1.0
+Export-Package: com.apress.springbatch.chapter10.domain;version="0.0.1
+ -SNAPSHOT";uses:="javax.persistence",com.apress.springbatch.chapter10
+ .processor;version="0.0.1-SNAPSHOT";uses:="com.apress.springbatch.cha
+ pter10.domain,org.springframework.batch.item",com.apress.springbatch.
+ chapter10.service;version="0.0.1-SNAPSHOT";uses:="com.apress.springba
+ tch.chapter10.domain",com.apress.springbatch.chapter10.service.impl;v
+ ersion="0.0.1-SNAPSHOT";uses:="com.apress.springbatch.chapter10.domai
+ n,com.apress.springbatch.chapter10.service",com.apress.springbatch.ch
+ apter10.writer;version="0.0.1-SNAPSHOT";uses:="com.apress.springbatch
+ .chapter10.domain,org.springframework.batch.item.file.transform",jobs
+ ;version="0.0.1-SNAPSHOT"
+Bundle-Version: 0.0.1-SNAPSHOT
+Tool: Bundlor 1.0.0.RELEASE
+Bundle-Name: Spring Batch Cammand Line Archetype
+Bundle-ManifestVersion: 2
+Import-Package: javax.persistence,org.apache.activemq,org.apache.activ
+ emq.command,org.apache.commons.dbcp,org.springframework.batch.core.co
+ nfiguration.support;version="[2.0.0, 3.0.0)",org.springframework.batc
+ h.core.explore.support;version="[2.0.0, 3.0.0)",org.springframework.b
+ atch.core.launch.support;version="[2.0.0, 3.0.0)",org.springframework
+ .batch.core.repository.support;version="[2.0.0, 3.0.0)",org.springfra
+ mework.batch.item;version="[2.0.0, 3.0.0)",org.springframework.batch.
+ item.adapter;version="[2.0.0, 3.0.0)",org.springframework.batch.item.
+ database;version="[2.0.0, 3.0.0)",org.springframework.batch.item.file
+ ;version="[2.0.0, 3.0.0)",org.springframework.batch.item.file.transfo
+ rm;version="[2.0.0, 3.0.0)",org.springframework.batch.item.jms;versio
+ n="[2.0.0, 3.0.0)",org.springframework.beans.factory.config;version="
+ [2.5.5, 4.0.0)";resolution:="optional",org.springframework.core.io;ve
+ rsion="[2.5.5, 4.0.0)";resolution:="optional",org.springframework.cor
+ e.task;version="[2.5.5, 4.0.0)";resolution:="optional",org.springfram
+ ework.jms.core,org.springframework.orm.hibernate3
+Bundle-SymbolicName: org.springframework.batch.archetype.simple.cli
+

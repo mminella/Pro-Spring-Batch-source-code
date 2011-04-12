@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:util="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.0.xsd 
+					http://www.springframework.org/schema/util 
+					http://www.springframework.org/schema/util/spring-util.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+
+	<beans:bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
+	
+	<beans:bean id="jmsWriter" class="org.springframework.batch.item.jms.JmsItemWriter">
+		<beans:property name="jmsTemplate" ref="jmsTemplate"/>
+	</beans:bean>
+	
+	<beans:bean id="jmsReader" class="org.springframework.batch.item.jms.JmsItemReader">
+		<beans:property name="jmsTemplate" ref="jmsTemplate"/>
+	</beans:bean>
+
+	<beans:bean id="orderWriter" class="org.springframework.batch.item.database.HibernateItemWriter">
+		<beans:property name="sessionFactory" ref="sessionFactory"/>
+	</beans:bean>
+	
+	<beans:bean id="dataGenerator" class="com.apress.springbatch.chapter10.processor.OrderGenerator"/>
+	
+	<beans:bean id="orderItemReader" class="org.springframework.batch.item.database.HibernateCursorItemReader" scope="step">
+	    <beans:property name="sessionFactory" ref="sessionFactory"/>
+	    <beans:property name="queryString" value="from OrderItem where inventoryValidated is null"/>
+	</beans:bean>
+	
+	<beans:bean id="orderReader" class="org.springframework.batch.item.database.HibernateCursorItemReader" scope="step">
+	    <beans:property name="sessionFactory" ref="sessionFactory"/>
+	    <beans:property name="queryString" value="from Order where creditValidated is null"/>
+	</beans:bean>
+	
+	<beans:bean id="creditService" class="com.apress.springbatch.chapter10.service.impl.CreditServiceImpl"/>
+		
+	<beans:bean id="creditVerificationProcessor" class="org.springframework.batch.item.adapter.ItemProcessorAdapter">
+		<beans:property name="targetObject" ref="creditService"/>
+		<beans:property name="targetMethod" value="validateCharge"/>
+	</beans:bean>
+		
+	<beans:bean id="inventoryService" class="com.apress.springbatch.chapter10.service.impl.InventoryServiceImpl"/>
+		
+	<beans:bean id="inventoryVerificationProcessor" class="org.springframework.batch.item.adapter.ItemProcessorAdapter">
+		<beans:property name="targetObject" ref="inventoryService"/>
+		<beans:property name="targetMethod" value="validateInventory"/>
+	</beans:bean>
+		
+	<beans:bean id="validatedOrderItemReader" class="org.springframework.batch.item.database.HibernateCursorItemReader" scope="step">
+	    <beans:property name="sessionFactory" ref="sessionFactory"/>
+	    <beans:property name="queryString" value="from Order as o where o.creditValidated = true and not exists (from OrderItem oi where oi.order = o and oi.inventoryValidated = false)"/>
+	    <beans:property name="useStatelessSession" value="false"/>
+	</beans:bean>
+	
+    <beans:bean id="outputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+        <beans:constructor-arg value="#{jobParameters[outputFile]}"/>
+    </beans:bean>
+    
+	<beans:bean id="pickListFormatter" class="com.apress.springbatch.chapter10.writer.PickListFormatter"/>
+	
+	<beans:bean id="pickListOutputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+	    <beans:property name="lineAggregator" ref="pickListFormatter"/>
+	</beans:bean>
+
+   <beans:bean id="pickListWriter" class="org.springframework.batch.item.file.MultiResourceItemWriter">
+        <beans:property name="resource" ref="outputFile"/>
+        <beans:property name="delegate" ref="pickListOutputWriter"/>
+        <beans:property name="itemCountLimitPerResource" value="1"/>
+    </beans:bean>
+	
+	<step id="preloadDataStep">
+		<tasklet>
+			<chunk reader="dataGenerator" writer="jmsWriter" commit-interval="500">
+			</chunk>
+		</tasklet>
+	</step>
+
+	<step id="batchOrderProcessingStep">
+		<tasklet>
+			<chunk reader="jmsReader" writer="orderWriter" commit-interval="500"/>
+		</tasklet>
+	</step>
+
+	<step id="creditVerificationStep">
+		<tasklet>
+			<chunk reader="orderReader" processor="creditVerificationProcessor" writer="orderWriter" commit-interval="500"/>
+		</tasklet>
+	</step>
+
+	<step id="inventoryVerificationStep">
+		<tasklet>
+			<chunk reader="orderItemReader" processor="inventoryVerificationProcessor" writer="orderWriter" commit-interval="500"/>
+		</tasklet>
+	</step>
+
+	<step id="processOrderStep">
+		<tasklet>
+			<chunk reader="validatedOrderItemReader" writer="pickListWriter" commit-interval="1"/>
+		</tasklet>
+	</step>
+
+	<job id="parallelJob">
+		<step id="step1" parent="preloadDataStep" next="step2"/>
+		<step id="step2" parent="batchOrderProcessingStep" next="parallelProcessing"/>
+		<split id="parallelProcessing" task-executor="taskExecutor" next="step5">
+			<flow>
+				<step id="step3" parent="creditVerificationStep"/>
+			</flow>
+			<flow>
+				<step id="step4" parent="inventoryVerificationStep"/>
+				</flow>
+			</split>
+		<step id="step5" parent="processOrderStep"/>
+	</job>
+</beans:beans>

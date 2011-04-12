@@ -5,8 +5,6 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans 
        	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
-	<import resource="classpath:/META-INF/spring/module-context.xml"/>
-
 	<bean id="jobOperator"
 		class="org.springframework.batch.core.launch.support.SimpleJobOperator"
 		p:jobLauncher-ref="jobLauncher" p:jobExplorer-ref="jobExplorer"
@@ -32,6 +30,20 @@
 		class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean"
 		p:dataSource-ref="dataSource" p:transactionManager-ref="transactionManager" />
 
+    <bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+    	<property name="brokerURL" value="vm://localhost"/>
+    </bean>
+    
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+    	<property name="connectionFactory" ref="jmsConnectionFactory"/>
+    	<property name="defaultDestination" ref="destination"/>
+    	<property name="receiveTimeout" value="5000"/>
+    </bean>
+    
+    <bean id="destination" class="org.apache.activemq.command.ActiveMQQueue">
+    	<constructor-arg value="orderQueue"/>
+    </bean>
+
 	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
 		<property name="driverClassName" value="${batch.jdbc.driver}" />
 		<property name="url" value="${batch.jdbc.url}" />
@@ -39,8 +51,26 @@
 		<property name="password" value="${batch.jdbc.password}" />
 	</bean>
 
-	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
+	    <property name="configLocation">
+	        <value>classpath:hibernate.cfg.xml</value>
+	    </property>
+	    <property  name="configurationClass">
+	        <value>org.hibernate.cfg.AnnotationConfiguration</value>
+	    </property>        
+		<property name="hibernateProperties">
+	        <props>
+	            <prop key="hibernate.show_sql">false</prop>
+	            <prop key="hibernate.format_sql">false</prop>
+	            <prop key="hibernate.hbm2ddl.auto">update</prop>
+	            <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+	        </props>
+		</property>
+	</bean>
+
+	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" lazy-init="true">
+		<property name="sessionFactory" ref="sessionFactory" />
 	</bean>
 
 	<bean id="placeholderProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -49,11 +79,4 @@
 		<property name="ignoreUnresolvablePlaceholders" value="true" />
 		<property name="order" value="1" />
 	</bean>
-
-	<!-- Initialize the datasource - remove this bean definition for production use! -->
-	<bean id="dataSourceInitializer" class="test.jdbc.datasource.DataSourceInitializer">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="initScripts" value="${batch.schema.script}"/>
-	</bean>
-
 </beans>

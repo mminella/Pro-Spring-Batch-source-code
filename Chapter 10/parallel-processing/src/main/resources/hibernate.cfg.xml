@@ -1,0 +1,11 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+ "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+ "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+  <session-factory>
+    <mapping class="com.apress.springbatch.chapter10.domain.Customer"/>
+    <mapping class="com.apress.springbatch.chapter10.domain.Order"/>
+    <mapping class="com.apress.springbatch.chapter10.domain.OrderItem"/>
+  </session-factory>
+</hibernate-configuration>

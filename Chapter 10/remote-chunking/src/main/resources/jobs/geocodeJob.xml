@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:int-jms="http://www.springframework.org/schema/integration/jms" 
+	xmlns:int="http://www.springframework.org/schema/integration" 
+	xmlns:jms="http://www.springframework.org/schema/jms" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd 
+					http://www.springframework.org/schema/integration/jms 
+					http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+					http://www.springframework.org/schema/integration 
+					http://www.springframework.org/schema/integration/spring-integration-2.0.xsd
+					http://www.springframework.org/schema/jms 
+					http://www.springframework.org/schema/jms/spring-jms-3.0.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+
+	<job id="geocodingJob">
+		<step id="step1">
+			<tasklet>
+				<chunk reader="customerReader" processor="geocoder" writer="customerImportWriter" commit-interval="1"/>
+			</tasklet>
+		</step>
+	</job>
+	
+	<beans:bean id="customerReader"    
+	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select * from customers where longitude is null or latitude is null"/>
+	    <beans:property name="rowMapper" ref="customerRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="customerRowMapper" class="com.apress.springbatch.chapter10.jdbc.CustomerRowMapper"/>
+
+	<beans:bean id="geocoder" class="com.apress.springbatch.chapter10.processor.GeocodingItemProcessor">
+		<beans:property name="url" value="http://tinygeocoder.com/create-api.php"/>
+	</beans:bean>
+	
+	<beans:bean id="customerImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update customers set longitude = :longitude, latitude = :latitude where id = :id"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+
+	<beans:bean id="chunkHandler" class="org.springframework.batch.integration.chunk.RemoteChunkHandlerFactoryBean">
+		<beans:property name="chunkWriter" ref="chunkWriter" />
+		<beans:property name="step" ref="step1" />
+	</beans:bean>
+
+	<beans:bean id="chunkWriter" class="org.springframework.batch.integration.chunk.ChunkMessageChannelItemWriter" scope="step">
+		<beans:property name="messagingOperations" ref="messagingGateway" />
+		<beans:property name="replyChannel" ref="replies" />
+		<beans:property name="maxWaitTimeouts" value="10"/>
+	</beans:bean>
+
+	<beans:bean id="messagingGateway" class="org.springframework.integration.core.MessagingTemplate">
+		<beans:property name="defaultChannel" ref="requests"/>
+		<beans:property name="receiveTimeout" value="10000"/>
+	</beans:bean>
+	
+	<int:channel id="requests" />
+	<int:channel id="incoming" />
+	<int-jms:outbound-channel-adapter connection-factory="connectionFactory" channel="requests" destination-name="requests" />
+
+	<int:transformer input-channel="incoming" output-channel="replies" ref="headerExtractor" method="extract" />
+
+	<beans:bean id="headerExtractor" class="org.springframework.batch.integration.chunk.JmsRedeliveredExtractor" />
+	
+	<int:channel id="replies">
+		<int:queue />
+		<int:interceptors>
+			<beans:bean id="pollerInterceptor" class="org.springframework.batch.integration.chunk.MessageSourcePollerInterceptor">
+				<beans:property name="messageSource">
+					<beans:bean class="org.springframework.integration.jms.JmsDestinationPollingSource">
+						<beans:constructor-arg>
+							<beans:bean class="org.springframework.jms.core.JmsTemplate">
+								<beans:property name="connectionFactory" ref="connectionFactory" />
+								<beans:property name="defaultDestinationName" value="replies" />
+								<beans:property name="receiveTimeout" value="1000" />
+							</beans:bean>
+						</beans:constructor-arg>
+					</beans:bean>
+				</beans:property>
+				<beans:property name="channel" ref="incoming" />
+			</beans:bean>
+		</int:interceptors>
+	</int:channel>
+	
+	<jms:listener-container connection-factory="connectionFactory" transaction-manager="transactionManager" acknowledge="transacted">
+		<jms:listener destination="requests" ref="chunkHandler" response-destination="replies" method="handleChunk"/>
+	</jms:listener-container>
+</beans:beans>
