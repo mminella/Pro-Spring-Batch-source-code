@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
+	xmlns:int-jms="http://www.springframework.org/schema/integration/jms" 
+	xmlns:int="http://www.springframework.org/schema/integration" 
+	xmlns:jms="http://www.springframework.org/schema/jms" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd 
+					http://www.springframework.org/schema/integration/jms 
+					http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+					http://www.springframework.org/schema/integration 
+					http://www.springframework.org/schema/integration/spring-integration-2.0.xsd
+					http://www.springframework.org/schema/jms 
+					http://www.springframework.org/schema/jms/spring-jms-3.0.xsd
+					http://www.springframework.org/schema/task 
+					http://www.springframework.org/schema/task/spring-task-3.0.xsd
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml"/>
+
+	<job id="geocodingJob">
+		<step id="step1.master">
+			<partition partitioner="partitioner" handler="partitionHandler"/>
+		</step>
+	</job>
+	
+	<step id="step1">
+		<tasklet>
+			<chunk reader="customerReader" processor="geocoder" writer="customerImportWriter" commit-interval="1"/>
+		</tasklet>
+	</step>
+
+	<beans:bean id="customerReader"    
+	                      class="org.springframework.batch.item.database.JdbcCursorItemReader">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="select * from customers where longitude is null or latitude is null"/>
+	    <beans:property name="rowMapper" ref="customerRowMapper"/>
+	</beans:bean>
+		
+	<beans:bean id="customerRowMapper" class="com.apress.springbatch.chapter10.jdbc.CustomerRowMapper"/>
+
+	<beans:bean id="geocoder" class="com.apress.springbatch.chapter10.processor.GeocodingItemProcessor">
+		<beans:property name="url" value="http://tinygeocoder.com/create-api.php"/>
+	</beans:bean>
+	
+	<beans:bean id="customerImportWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	    <beans:property name="dataSource" ref="dataSource"/>
+	    <beans:property name="sql" value="update customers set longitude = :longitude, latitude = :latitude where id = :id"/>
+	    <beans:property name="itemSqlParameterSourceProvider">
+	        <beans:bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+	    </beans:property>
+	</beans:bean>
+	
+	<beans:bean id="partitioner" class="org.springframework.batch.core.partition.support.SimplePartitioner"/>
+	
+	<beans:bean id="partionHandler" class="org.springframework.batch.integration.partition.MessageChannelPartitionHandler">
+		<beans:property name="stepName" value="step1"/>
+		<beans:property name="gridSize" value="3"/>
+		<beans:property name="messagingOperations">
+			<beans:bean class="org.springframework.integration.core.MessagingTemplate">
+				<beans:property name="defaultChannel" ref="requests"/>
+				<beans:property name="receiveTimeout" value="1000"/>
+			</beans:bean>
+		</beans:property>
+	</beans:bean>
+	
+	<int-jms:outbound-gateway request-channel="requests" request-destination-name="requests"
+		reply-channel="staging" receive-timeout="30000">
+		<int:poller task-executor="taskExecutor" />
+	</int-jms:outbound-gateway>
+
+	<task:executor id="taskExecutor" pool-size="2" />
+
+	<int:channel id="requests">
+		<int:queue />
+	</int:channel>
+
+	<int:channel id="staging"/>
+	
+	<int-jms:inbound-gateway request-channel="worker" request-destination-name="requests"
+		concurrent-consumers="2" />
+
+	<int:service-activator ref="stepExecutionRequestHandler" input-channel="worker"/>
+	<int:aggregator ref="partitionHandler" input-channel="staging"/>
+
+	<beans:bean id="stepExecutionRequestHandler" class="org.springframework.batch.integration.partition.StepExecutionRequestHandler">
+		<beans:property name="jobExplorer" ref="jobExplorer"/>
+		<beans:property name="stepLocator" ref="stepLocator"/>
+	</beans:bean>
+
+	<beans:bean id="stepLocator" class="org.springframework.batch.integration.partition.BeanFactoryStepLocator" />
+</beans:beans>
