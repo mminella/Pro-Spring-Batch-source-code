@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:integration="http://www.springframework.org/schema/integration" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int-jms="http://www.springframework.org/schema/integration/jms" xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-2.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
+		http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms-2.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+		
+	<!-- Active-MQ JMS queues partitionRequestsQueue, partitionStagingQueue 
+		and partitionRepliesQueue defined in another file -->
+	<!-- jobLauncher defined in another file too, using default sync executor -->
+
+	<batch:job id="integrationPartitionJob">
+		<batch:step id="integrationPartitionStep-master">
+			<batch:partition step="integrationPartitionStep1"
+				partitioner="integrationPartitioner" handler="partitionHandler" />
+		</batch:step>
+	</batch:job>
+
+	<bean id="integrationPartitioner" class="my.SamplePartitioner"
+		scope="step" />
+
+	<batch:step id="integrationPartitionStep1">
+		<batch:tasklet>
+			<bean id="integrationPartitionTasklet" class="my.PartitionTasklet"
+				scope="step">
+				<property name="partitionedValue" value="#{stepExecutionContext[partitionedValue]}" />
+			</bean>
+		</batch:tasklet>
+	</batch:step>
+
+	<!-- Partition Handler: send the partitions to requests channel -->
+	<bean id="partitionHandler"
+		class="org.springframework.batch.integration.partition.MessageChannelPartitionHandler"> <!-- scope="step" -->
+		<property name="messagingOperations" ref="outboundRequestMessagingTemplate" />
+		<property name="replyChannel" ref="inboundPartitionReplies" />
+		<property name="stepName" value="integrationPartitionStep1" />
+		<property name="gridSize" value="2" />
+	</bean>
+
+
+	<!-- Outbound Request channel, and bind the channel to JMS partitionRequestsQueue -->
+	<integration:channel id="outboundPartitionRequests" />
+	<bean id="outboundRequestMessagingTemplate" class="org.springframework.integration.core.MessagingTemplate">
+		<property name="defaultChannel" ref="outboundPartitionRequests" />
+		<property name="receiveTimeout" value="1000" />
+	</bean>
+	<int-jms:outbound-channel-adapter
+		connection-factory="batch.jmsFactory" destination="partitionRequestsQueue"
+		channel="outboundPartitionRequests" />
+
+
+	<!-- Inbound Request Channel, from JMS partitionRequestsQueue, handle by 
+		stepExecutionRequestHandler, output to outboundStaging -->
+	<integration:channel id="inboundPartitionRequests" />
+	<int-jms:message-driven-channel-adapter
+		id="reqQueueAdapter" connection-factory="batch.jmsFactory"
+		destination="partitionRequestsQueue" channel="inboundPartitionRequests" />
+
+
+	<bean id="partitionStepExecutionRequestHandler"
+		class="org.springframework.batch.integration.partition.StepExecutionRequestHandler"
+		p:jobExplorer-ref="jobExplorer" p:stepLocator-ref="stepLocator" />
+
+
+	<integration:service-activator ref="partitionStepExecutionRequestHandler"
+		input-channel="inboundPartitionRequests" output-channel="outboundPartitionStaging">
+	</integration:service-activator>
+
+
+	<!-- Outbound Staging channel, and bind the channel to JMS partitionStagingQueue -->
+	<integration:channel id="outboundPartitionStaging" />
+	<bean id="outboundStagingMessagingTemplate" class="org.springframework.integration.core.MessagingTemplate">
+		<property name="defaultChannel" ref="outboundPartitionStaging" />
+		<property name="receiveTimeout" value="1000" />
+	</bean>
+	<int-jms:outbound-channel-adapter
+		connection-factory="batch.jmsFactory" destination="partitionStagingQueue"
+		channel="outboundPartitionStaging" />
+
+	<!-- Inbound Staging Channel, from JMS partitionStagingQueue, handle by 
+		partitionHandler (as aggregator), output to outboundPartitionReplies -->
+	<integration:channel id="inboundPartitionStaging" />
+	<int-jms:message-driven-channel-adapter
+		id="stagingQueueAdapter" connection-factory="batch.jmsFactory"
+		destination="partitionStagingQueue" channel="inboundPartitionStaging" />
+
+	<integration:aggregator ref="partitionHandler"
+		timeout="10000" input-channel="inboundPartitionStaging"
+		output-channel="outboundPartitionReplies">
+	</integration:aggregator>
+
+
+	<!-- Outbound Replies channel, and bind the channel to JMS partitionRepliesQueue -->
+	<integration:channel id="outboundPartitionReplies" />
+	<bean id="outboundRepliesMessagingTemplate" class="org.springframework.integration.core.MessagingTemplate">
+		<property name="defaultChannel" ref="outboundPartitionReplies" />
+		<property name="receiveTimeout" value="1000" />
+	</bean>
+	<int-jms:outbound-channel-adapter
+		connection-factory="batch.jmsFactory" destination="partitionRepliesQueue"
+		channel="outboundPartitionReplies" />
+
+
+	<!-- Inbound Replies Channel, from JMS partitionRepliesQueue -->
+	<integration:channel id="inboundPartitionReplies">
+		<integration:queue />
+	</integration:channel>
+	<int-jms:message-driven-channel-adapter
+		id="repliesQueueAdapter" connection-factory="batch.jmsFactory"
+		destination="partitionRepliesQueue" channel="inboundPartitionReplies" />
+
+</beans>

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans" 
 	xmlns:p="http://www.springframework.org/schema/p" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  	xmlns:amq="http://activemq.apache.org/schema/core"
+  	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans 
-       	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+       	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       	http://activemq.apache.org/schema/core 
+       	http://activemq.apache.org/schema/core/activemq-core-5.4.2.xsd">
 
 	<bean id="jobOperator"
 		class="org.springframework.batch.core.launch.support.SimpleJobOperator"
@@ -44,6 +47,10 @@
     <bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
     	<property name="brokerURL" value="tcp://localhost:61616"/>
     </bean>
+
+	<amq:queue id="requestsQueue"  physicalName="com.apress.springbatch.chapter10.partition.requests"/>
+	<amq:queue id="stagingQueue"  physicalName="com.apress.springbatch.chapter10.partition.staging"/>
+	<amq:queue id="repliesQueue"  physicalName="com.apress.springbatch.chapter10.partition.replies"/>
 
 	<bean id="placeholderProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="location" value="classpath:batch.properties" />

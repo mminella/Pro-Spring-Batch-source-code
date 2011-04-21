@@ -181,6 +181,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+		    <groupId>org.apache.xbean</groupId>
+		    <artifactId>xbean-spring</artifactId>
+		    <version>3.6</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<extensions>

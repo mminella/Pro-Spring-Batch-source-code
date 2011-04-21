@@ -10,7 +10,7 @@
                     http://www.springframework.org/schema/batch 
 	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
 
-<!--    <beans:import resource="../launch-context.xml"/> -->
+    <beans:import resource="../launch-context.xml"/> 
 
 	<beans:bean id="idIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
 	
@@ -263,10 +263,6 @@
 	<step id="calculateTransactionFees">
 		<tasklet task-executor="taskExecutor">
 			<chunk reader="transactionPricingItemReader" processor="feesItemProcessor" writer="applyFeeWriter" commit-interval="100"/>
-			<listeners>
-				<listener ref="stagingStepListener"/>
-				<listener ref="stagingChunkUpdater"/>
-			</listeners>
 		</tasklet>
 	</step>
 

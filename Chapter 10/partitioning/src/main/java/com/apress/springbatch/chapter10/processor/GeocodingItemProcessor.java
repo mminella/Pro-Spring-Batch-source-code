@@ -21,28 +21,31 @@ public class GeocodingItemProcessor implements ItemProcessor<Customer, Customer>
 
     public Customer process(Customer customer) throws Exception {
         System.out.println("****************** I'm going to process " + customer);
-        HttpClient client = new DefaultHttpClient();
+//        HttpClient client = new DefaultHttpClient();
+//
+//        String address = buildAddress(customer);
+//        
+//        if(address == null) {
+//            return null;
+//        }
+//
+//        HttpGet get = new HttpGet(url + "?q=" + address);
+//        
+//        HttpResponse response = client.execute(get);
+//
+//        HttpEntity entity = response.getEntity();
+//        
+//        String coordinantes = IOUtils.toString(entity.getContent());
+//        coordinantes = StringUtils.strip(coordinantes);
+//        
+//        if(coordinantes.length() > 0) {
+//            String [] values = coordinantes.split(COMMA);
+//            customer.setLongitude(Double.valueOf(values[0]));
+//            customer.setLatitude(Double.valueOf(values[1]));
+//        }
 
-        String address = buildAddress(customer);
-        
-        if(address == null) {
-            return null;
-        }
-
-        HttpGet get = new HttpGet(url + "?q=" + address);
-        
-        HttpResponse response = client.execute(get);
-
-        HttpEntity entity = response.getEntity();
-        
-        String coordinantes = IOUtils.toString(entity.getContent());
-        coordinantes = StringUtils.strip(coordinantes);
-        
-        if(coordinantes.length() > 0) {
-            String [] values = coordinantes.split(COMMA);
-            customer.setLongitude(Double.valueOf(values[0]));
-            customer.setLatitude(Double.valueOf(values[1]));
-        }
+        customer.setLongitude(99d);
+        customer.setLatitude(88d);
         
         return customer;
     }
