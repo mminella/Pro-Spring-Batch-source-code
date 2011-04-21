@@ -9,13 +9,16 @@
 
     <beans:import resource="../launch-context.xml"/> 
 
+    <!-- The bean that does the work of the job -->
     <beans:bean id="helloWorld" 
                          class="com.apress.springbatch.chapter2.HelloWorld"/> 
 
+    <!-- The step definition for the helloWorldJob -->
     <step id="helloWorldStep"> 
         <tasklet ref="helloWorld"/> 
     </step> 
 
+    <!-- The job definition for the helloWorldJob -->
     <job id="helloWorldJob"> 
         <step id="step1" parent="helloWorldStep"/> 
     </job>
