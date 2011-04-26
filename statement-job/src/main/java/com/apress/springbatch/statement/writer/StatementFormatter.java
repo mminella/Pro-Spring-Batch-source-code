@@ -49,8 +49,6 @@ public class StatementFormatter implements LineAggregator<Statement> {
         output.append(String.format(SUMMARY_HEADER_FORMAT,
                 new Object[] { statement.getCustomer().getAccount()
                         .getAccountNumber() }));
-        System.out.println("***************** security total = " + statement.getSecurityTotal());
-        System.out.println("***************** cash total = " + statement.getCustomer().getAccount().getCashBalance());
         output.append(String.format(
                 SUMMARY_FORMAT,
                 new Object[] {

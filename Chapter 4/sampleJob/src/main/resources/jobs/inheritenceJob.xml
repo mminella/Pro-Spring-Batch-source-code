@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans xmlns:batch="http://www.springframework.org/schema/batch" 
+       xmlns:p="http://www.springframework.org/schema/p" 
+       xmlns="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+                    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+    <import resource="../launch-context.xml"/>
+
+    <bean id="helloWorld" 
+        class="com.apress.springbatch.chapter4.HelloWorld" scope="step">
+        <property name="name" value="#{jobParameters[name]}"/>
+    </bean> 
+
+    <bean id="michaelTasklet" 
+        class="com.apress.springbatch.chapter4.HelloWorld" scope="step">
+        <property name="name" value="Michael"/>
+    </bean> 
+
+    <bean id="endTasklet" 
+        class="com.apress.springbatch.chapter4.HelloWorld" scope="step">
+        <property name="name" value="and Goodbye"/>
+    </bean> 
+
+    <bean id="myParameterValidator"
+	    class="com.apress.springbatch.chapter4.ParameterValidator"/>
+
+    <batch:step id="helloWorldStep"> 
+        <batch:tasklet ref="helloWorld"/> 
+    </batch:step> 
+
+    <batch:step id="helloMichaelStep"> 
+        <batch:tasklet ref="michaelTasklet"/> 
+    </batch:step> 
+
+    <batch:step id="endStep"> 
+        <batch:tasklet ref="endTasklet"/> 
+    </batch:step> 
+
+	<bean id="idIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
+
+	<bean id="myJobListener" class="com.apress.springbatch.chapter4.ExampleJobListener"/>
+
+	<batch:job id="baseJob" abstract="true" restartable="true" incrementer="idIncrementer" job-repository="jobRepository">
+		<batch:listeners>
+			<batch:listener ref="myJobListener"/>
+		</batch:listeners>
+		<batch:validator ref="myParameterValidator"/>
+	</batch:job>
+
+    <batch:job id="inheritenceJob" parent="baseJob"> 
+	    <batch:step id="step1" parent="helloMichaelStep">
+	        <batch:stop on="FAILED" restart="step2"/>
+	        <batch:next on="COMPLETED" to="step2"/>
+	    </batch:step>
+	    <batch:step id="step2" parent="endStep"/>
+    </batch:job>
+</beans> 
