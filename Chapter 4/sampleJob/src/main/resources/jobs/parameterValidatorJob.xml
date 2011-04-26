@@ -4,7 +4,7 @@
        xmlns="http://www.springframework.org/schema/beans" 
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
        xsi:schemaLocation="http://www.springframework.org/schema/beans 
-                    http://www.springframework.org/schema/beans/spring-beans-2.5.xsd 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
                     http://www.springframework.org/schema/batch 
                     http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
 
@@ -15,11 +15,6 @@
         <property name="name" value="#{jobParameters[name]}"/>
     </bean> 
 
-    <bean id="michaelTasklet" 
-        class="com.apress.springbatch.chapter4.HelloWorld" scope="step">
-        <property name="name" value="Michael"/>
-    </bean> 
-
     <bean id="endTasklet" 
         class="com.apress.springbatch.chapter4.HelloWorld" scope="step">
         <property name="name" value="and Goodbye"/>
@@ -27,29 +22,27 @@
 
     <bean id="myParameterValidator"
 	    class="com.apress.springbatch.chapter4.ParameterValidator"/>
+	    
+	<bean id="requiredParamValidator" class="org.springframework.batch.core.job.DefaultJobParametersValidator">
+		<property name="requiredKeys" value="batch.name,batch.runDate"/>
+	</bean>
+
+	<bean id="optionalParamValidator" class="org.springframework.batch.core.job.DefaultJobParametersValidator">
+		<property name="requiredKeys" value="batch.name,batch.runDate"/>
+		<property name="optionalKeys" value="batch.address"/>
+	</bean>
 
     <batch:step id="helloWorldStep"> 
         <batch:tasklet ref="helloWorld"/> 
-    </batch:step> 
-
-    <batch:step id="helloMichaelStep"> 
-        <batch:tasklet ref="michaelTasklet"/> 
     </batch:step> 
 
     <batch:step id="endStep"> 
         <batch:tasklet ref="endTasklet"/> 
     </batch:step> 
 
-	<bean id="idIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
-
-	<batch:job id="baseJob" abstract="true" restartable="true" incrementer="idIncrementer">
-	</batch:job>
-
-    <batch:job id="sampleJob" incrementer="idIncrementer"> 
-	    <batch:step id="step1" parent="helloMichaelStep">
-	        <batch:stop on="FAILED" restart="step2"/>
-	        <batch:next on="COMPLETED" to="step2"/>
-	    </batch:step>
+    <batch:job id="parameterValidatorJob"> 
+	    <batch:step id="step1" parent="helloWorldStep" next="step2"/>
 	    <batch:step id="step2" parent="endStep"/>
+	    <batch:validator ref="optionalParamValidator"/>
     </batch:job>
 </beans> 
