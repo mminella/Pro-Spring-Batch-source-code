@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans:beans xmlns="http://www.springframework.org/schema/batch" 
+       xmlns:p="http://www.springframework.org/schema/p" 
+       xmlns:beans="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+                    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+    <beans:import resource="../launch-context.xml"/>
+
+	<beans:bean id="callableObject" class="com.apress.springbatch.chapter4.CallableLogger"/>
+	
+	<beans:bean id="callableTaskletAdapter" class="org.springframework.batch.core.step.tasklet.CallableTaskletAdapter">
+		<beans:property name="callable" ref="callableObject"/>
+	</beans:bean>
+	
+    <job id="callableJob"> 
+	    <step id="step1">
+	    	<tasklet ref="callableTaskletAdapter"/>
+	    </step>
+    </job>
+</beans:beans> 
