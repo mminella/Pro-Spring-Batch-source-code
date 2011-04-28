@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans:beans xmlns="http://www.springframework.org/schema/batch" 
+       xmlns:p="http://www.springframework.org/schema/p" 
+       xmlns:beans="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+                    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+    <beans:import resource="../launch-context.xml"/>
+
+	<beans:bean id="inputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+	    <beans:constructor-arg value="#{jobParameters[inputFile]}"/>
+	</beans:bean>
+	
+	<beans:bean id="outputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+	    <beans:constructor-arg value="#{jobParameters[outputFile]}"/>
+	</beans:bean>
+	
+	<beans:bean id="inputReader" class="org.springframework.batch.item.file.FlatFileItemReader">
+		<beans:property name="resource" ref="inputFile"/>
+	    <beans:property name="lineMapper">
+	        <beans:bean class="org.springframework.batch.item.file.mapping.PassThroughLineMapper"/>
+	    </beans:property>
+	</beans:bean>
+	
+	<beans:bean id="outputWriter" class="org.springframework.batch.item.file.FlatFileItemWriter">
+		<beans:property name="resource" ref="outputFile"/>
+		<beans:property name="lineAggregator">
+			<beans:bean class="org.springframework.batch.item.file.transform.PassThroughLineAggregator"/>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean id="decider" class="com.apress.springbatch.chapter4.RandomDecider"/>
+	
+	<beans:bean id="successTasklet" class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The step succeeded!"/>
+	</beans:bean>
+	
+	<beans:bean id="failTasklet" class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The step failed!"/>
+	</beans:bean>
+	
+    <job id="conditionalLogicJob">
+    	<step id="step1" next="decision">
+    		<tasklet>
+    			<chunk reader="inputReader" writer="outputWriter" commit-interval="20"/>
+    		</tasklet>
+    	</step>
+    	<decision decider="decider" id="decision">
+    		<next on="*" to="step2a"/>
+    		<next on="FAILED" to="step2b"/>
+    	</decision> 
+    	<step id="step2a">
+    		<tasklet ref="successTasklet"/>
+    	</step>
+    	<step id="step2b">
+    		<tasklet ref="failTasklet"/>
+    	</step>
+    </job>
+</beans:beans> 

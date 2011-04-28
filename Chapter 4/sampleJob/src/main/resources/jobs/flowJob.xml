@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+                    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<beans:import resource="../launch-context.xml" />
+
+	<beans:bean id="loadStockFile"
+		class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The stock file has been loaded" />
+	</beans:bean>
+
+	<beans:bean id="loadCustomerFile"
+		class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The customer file has been loaded" />
+	</beans:bean>
+
+	<beans:bean id="updateStart"
+		class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The stock file has been loaded" />
+	</beans:bean>
+
+	<beans:bean id="runBatchTasklet"
+		class="com.apress.springbatch.chapter4.MessageTasklet">
+		<beans:property name="message" value="The batch has been run" />
+	</beans:bean>
+
+	<flow id="preProcessingFlow">
+		<step id="loadFileStep" next="loadCustomerStep">
+			<tasklet ref="loadStockFile"/>
+		</step>
+		<step id="loadCustomerStep" next="updateStartStep">
+			<tasklet ref="loadCustomerFile"/>
+		</step>
+		<step id="updateStartStep">
+			<tasklet ref="updateStart"/>
+		</step>
+	</flow>
+
+	<job id="flowJob">
+		<step id="initializeBatch" next="runBatch">
+			<flow parent="preProcessingFlow"/>
+		</step>
+		<step id="runBatch">
+			<tasklet ref="runBatchTasklet"/>
+		</step>
+	</job>
+</beans:beans> 
