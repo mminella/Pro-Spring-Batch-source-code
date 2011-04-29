@@ -28,7 +28,7 @@
 		<beans:property name="message" value="The batch has been run" />
 	</beans:bean>
 
-	<flow id="preProcessingFlow">
+	<job id="preProcessingFlow">
 		<step id="loadFileStep" next="loadCustomerStep">
 			<tasklet ref="loadStockFile"/>
 		</step>
@@ -38,7 +38,7 @@
 		<step id="updateStartStep">
 			<tasklet ref="updateStart"/>
 		</step>
-	</flow>
+	</job>
 
 	<job id="flowJob">
 		<step id="initializeBatch" next="runBatch">
@@ -49,3 +49,24 @@
 		</step>
 	</job>
 </beans:beans> 
+
+
+
+
+<job id=”preProcessingFlow”>
+<step id=”step1” parent=”loadStockFile” next=”step2”/>
+<step id=”step2” parent=”loadCustomerFile” next=”step3”/>
+<step id=”step3” parent=”updateStartOfBatchCycle”/>
+</job>
+
+<beans:bean id=”jobParametersExtractor” 
+                     class=”org.springframework.batch.core.step.job.DefaultJobParametersExtractor”>
+<beans:property name=”keys” value=”job.stockFile,job.customerFile”/>
+</beans:bean>
+
+<job id="subJobJob">
+<step id=”step1” next=”step4”>
+<job id=”preprocessingSubJob” job-parameters-extractor=”jobParametersExtractor”/>
+</step>
+<step id=”step4” parent=”runBatch”/>
+</job>
