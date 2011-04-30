@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<beans:beans xmlns="http://www.springframework.org/schema/batch" 
+       xmlns:beans="http://www.springframework.org/schema/beans" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd"> 
+
+	<beans:bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+		<beans:property name="lineMapper">
+			<beans:bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<beans:property name="lineTokenizer">
+					<beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+						<beans:property name="delimiter" value=","/>
+						<beans:property name="names" value="id,name,value" />
+					</beans:bean>
+				</beans:property>
+				<beans:property name="fieldSetMapper">
+					<beans:bean class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+						<beans:property name="targetType" value="com.apress.springbatch.chapter5.Person" />	
+					</beans:bean>
+				</beans:property>
+			</beans:bean>
+		</beans:property>
+		<beans:property name="resource" ref="inputFile" />
+	</beans:bean>
+	
+	<beans:bean id="inputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+		<beans:constructor-arg value="#{jobParameters[inputFile]}"/>
+	</beans:bean>
+
+	<beans:bean id="outputFile" class="org.springframework.core.io.FileSystemResource" scope="step">
+		<beans:constructor-arg value="#{jobParameters[outputFile]}"/>
+	</beans:bean>
+
+	<beans:bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter" scope="step">
+		<beans:property name="resource" ref="outputFile" />
+		<beans:property name="lineAggregator">
+			<beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+				<beans:property name="delimiter" value=";"/>
+				<beans:property name="fieldExtractor">
+					<beans:bean class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+						<beans:property name="names" value="value,name,id"/>					
+					</beans:bean>
+				</beans:property>
+			</beans:bean>
+		</beans:property>
+	</beans:bean>
+	
+	<job id="copyJob">
+		<step id="step1">
+			<tasklet>
+				<chunk reader="itemReader" writer="itemWriter" commit-interval="1"/>
+			</tasklet>
+		</step>
+	</job>
+
+</beans:beans>

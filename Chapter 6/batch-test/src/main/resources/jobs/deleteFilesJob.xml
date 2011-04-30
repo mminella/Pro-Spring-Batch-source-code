@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+                    http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<bean id="deleteFilesTasklet" class="com.apress.springbatch.chapter6.DeleteFilesTasklet" />
+
+	<batch:step id="deleteFilesStep">
+		<batch:tasklet ref="deleteFilesTasklet" />
+	</batch:step>
+
+	<bean id="idIncrementer"
+		class="org.springframework.batch.core.launch.support.RunIdIncrementer" />
+
+	<batch:job id="deleteFilesJob" incrementer="idIncrementer">
+		<batch:step id="step1" parent="deleteFilesStep" />
+	</batch:job>
+</beans>
