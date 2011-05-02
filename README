@@ -1,0 +1,36 @@
+# Pro Spring Batch
+
+_Pro Spring Batch_ is a book from [Apress](http://www.apress.com/9781430234524) by Michael T. Minella that provides an in depth review of the [Spring Batch](http://static.springsource.org/spring-batch/) framework.  This repository serves as the location of the book's sample code.
+
+## Pro Spring Batch Overview
+Since its release, Spring framework has transformed virtually every aspect of Java development including web applications, security, AOP, persistence, and messaging. Spring Batch, one of its newer additions, now brings the same Spring idioms we are familiar with to batch processing. Spring Batch addresses the needs of any batch process, from the complex calculations performed in the biggest financial institutions to simple data migrations that occur with many software development projects.    
+
+### Pro Spring Batch is intended to answer three questions:  
+
+* What? What is batch processing? What does it entail? What makes it different from the other applications we are developing? What are the challenges inherent in the development of a batch process?
+* Why? Why do batch processing? Why can’t we just process things as we get them? Why do we do batch processing differently than the web applications that we currently work on?
+* How? How to implement a robust, scalable, distributed batch processing system using open source frameworks.
+Pro Spring Batch gives you concrete examples of how each piece of functionality is used and why you would use it in a real world application. This includes providing tips that the "school of hard knocks" has taught the author in his experience with Spring Batch. Pro Spring Batch includes examples of I/O options that are not mentioned in the official user’s guide as well as performance tips on things like how to limit the impact of maintaining the state of your jobs. 
+
+The author also walks you through, from end to end, the design and implementation of a batch process based upon a theoretical real world example. This includes basic project setup, implementation, testing, tuning and scaling for large volumes.
+
+## What you’ll learn
+
+* What are the batch concepts and how they relate to the Spring Batch framework
+* How to use declarative I/O using the Spring Batch readers/writers
+* What are the data integrity techniques used by Spring Batch including transactions and job state/restartability
+* How to scale batch jobs via distributed batch processing
+* How to handle testing batch processes (Unit and functional) and much more...
+
+##Who this book is for
+
+Java Developers with Spring experience. Java Architects designing batch solutions. More specifically, this book is intended for those who have a solid foundation in the core Java platform.  Batch processing covers a wide spectrum of topics, not all of which are covered in detail in this book. Concepts in Java which the reader should be comfortable with include file I/O, JDBC, and transactions. Given that Spring Batch is a framework built upon the open source IoC Container Spring, which will not be covered in this book, it is expected that the reader will be familiar with its concepts and conventions. With that in mind, the reader is not expected to have any prior exposure to the Spring Batch framework. All concepts related to it will be explained in detail with working examples.
+
+Feedback
+--------
+
+You can send feedback via [e-mail](mailto:prospringbatch@michaelminella.com) or via [Github Issues](https://github.com/mminella/Pro-Spring-Batch-source-code/issues).
+
+-----
+
+[Michael Minella](http://www.michaelminella.com)
