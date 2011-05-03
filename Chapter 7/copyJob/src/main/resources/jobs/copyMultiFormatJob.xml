@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+    xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+    <beans:import resource="../launch-context.xml" />
+
+    <beans:bean id="customerFile"
+        class="org.springframework.core.io.FileSystemResource" scope="step">
+        <beans:constructor-arg value="#{jobParameters[customerFile]}" />
+    </beans:bean>
+
+    <beans:bean id="customerFileReader"
+        class="org.springframework.batch.item.file.FlatFileItemReader">
+        <beans:property name="resource" ref="customerFile" />
+        <beans:property name="lineMapper">
+            <beans:bean
+                class="org.springframework.batch.item.file.mapping.PatternMatchingCompositeLineMapper">
+                <beans:property name="tokenizers">
+                    <beans:map>
+                        <beans:entry key="CUST*"
+                            value-ref="customerLineTokenizer" />
+                        <beans:entry key="TRANS*"
+                            value-ref="transactionLineTokenizer" />
+                    </beans:map>
+                </beans:property>
+                <beans:property name="fieldSetMappers">
+                    <beans:map>
+                        <beans:entry key="CUST*"
+                            value-ref="customerFieldSetMapper" />
+                        <beans:entry key="TRANS*"
+                            value-ref="transactionFieldSetMapper" />
+                    </beans:map>
+                </beans:property>
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="customerLineTokenizer"
+        class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names" value="prefix,firstName,middleInitial,lastName,address,city,state,zip" />
+        <beans:property name="delimiter" value="," />
+    </beans:bean>
+
+    <beans:bean id="transactionLineTokenizer"
+        class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+        <beans:property name="names"
+            value="prefix,accountNumber,transactionDate,amount" />
+        <beans:property name="delimiter" value="," />
+    </beans:bean>
+
+    <beans:bean id="customerFieldSetMapper"
+        class="org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper">
+        <beans:property name="prototypeBeanName" value="customer" />
+        <beans:property name="strict" value="false" />
+    </beans:bean>
+
+    <beans:bean id="transactionFieldSetMapper"
+        class="com.apress.springbatch.chapter7.TransactionFieldSetMapper" />
+
+    <beans:bean id="customer" class="com.apress.springbatch.chapter7.Customer"
+        scope="prototype" />
+
+    <beans:bean id="outputFile"
+        class="org.springframework.core.io.FileSystemResource" scope="step">
+        <beans:constructor-arg value="#{jobParameters[outputFile]}" />
+    </beans:bean>
+
+    <beans:bean id="outputWriter"
+        class="org.springframework.batch.item.file.FlatFileItemWriter">
+        <beans:property name="resource" ref="outputFile" />
+        <beans:property name="lineAggregator">
+            <beans:bean
+                class="com.apress.springbatch.chapter7.CustomerLineAggregator">
+                <beans:property name="customerLineAggregator"
+                    ref="customerLineAggregator" />
+                <beans:property name="transactionLineAggregator"
+                    ref="transactionLineAggregator" />
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="customerLineAggregator"
+        class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
+        <beans:property name="fieldExtractor">
+            <beans:bean
+                class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                <beans:property name="names"
+                    value="firstName,middleInitial,lastName,address,city,state,zip" />
+            </beans:bean>
+        </beans:property>
+        <beans:property name="format" value="%s %s. %s, %s, %s %s %s" />
+    </beans:bean>
+
+    <beans:bean id="transactionLineAggregator"
+        class="org.springframework.batch.item.file.transform.FormatterLineAggregator">
+        <beans:property name="fieldExtractor">
+            <beans:bean
+                class="org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor">
+                <beans:property name="names"
+                    value="accountNumber,amount,dateString" />
+            </beans:bean>
+        </beans:property>
+        <beans:property name="format"
+            value="%s had a transaction of %.2f on %s" />
+    </beans:bean>
+
+    <step id="copyFileStep">
+        <tasklet>
+            <chunk reader="customerFileReader" writer="outputWriter" commit-interval="10"/>
+        </tasklet>
+    </step>
+
+    <job id="copyMultiFormatJob">
+        <step id="step1" parent="copyFileStep"/>
+    </job>
+</beans:beans>
