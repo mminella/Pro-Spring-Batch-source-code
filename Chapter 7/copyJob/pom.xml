@@ -14,7 +14,7 @@
 		CommandLineJobRunner directly or with "java -jar launch-context.xml job1".</description>
 	<properties>
 		<maven.test.failure.ignore>true</maven.test.failure.ignore>
-		<spring.framework.version>2.5.6</spring.framework.version>
+		<spring.framework.version>3.0.5.RELEASE</spring.framework.version>
 		<spring.batch.version>2.1.2.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
@@ -166,16 +166,6 @@
 			<artifactId>hibernate-annotations</artifactId>
 			<optional>true</optional>
 			<version>3.4.0.GA</version>
-		</dependency>
-		<dependency>
-			<groupId>org.mybatis</groupId>
-			<artifactId>mybatis</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.mybatis</groupId>
-			<artifactId>mybatis-spring</artifactId>
-			<version>1.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.aspectj</groupId>

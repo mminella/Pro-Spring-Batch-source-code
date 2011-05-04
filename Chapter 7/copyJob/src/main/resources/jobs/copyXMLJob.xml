@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/batch"
+    xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+					http://www.springframework.org/schema/batch 
+	                http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+    <beans:import resource="../launch-context.xml" />
+
+    <beans:bean id="customerFile"
+        class="org.springframework.core.io.FileSystemResource" scope="step">
+        <beans:constructor-arg value="#{jobParameters[customerFile]}" />
+    </beans:bean>
+
+    <beans:bean id="customerFileReader"
+        class="org.springframework.batch.item.xml.StaxEventItemReader">
+        <beans:property name="fragmentRootElementName"
+            value="customer" />
+        <beans:property name="resource" ref="customerFile" />
+        <beans:property name="unmarshaller" ref="customerMarshaller" />
+    </beans:bean>
+
+    <beans:bean id="customerMarshaller"
+        class="org.springframework.oxm.xstream.XStreamMarshaller">
+        <beans:property name="aliases">
+            <beans:map>
+                <beans:entry key="customer"
+                    value="com.apress.springbatch.chapter7.Customer" />
+                <beans:entry key="transaction"
+                    value="com.apress.springbatch.chapter7.Transaction" />
+                <beans:entry key="account" value="java.lang.String" />
+                <beans:entry key="zip" value="java.lang.String" />
+            </beans:map>
+        </beans:property>
+        <beans:property name="implicitCollection">
+            <beans:map>
+                <beans:entry key="transactions"
+                    value="com.apress.springbatch.chapter7.Customer" />
+            </beans:map>
+        </beans:property>
+        <beans:property name="converters">
+            <beans:list>
+                <beans:ref local="dateConverter" />
+            </beans:list>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="dateConverter"
+        class="com.thoughtworks.xstream.converters.basic.DateConverter">
+        <beans:constructor-arg value="yyyy-MM-dd HH:mm:ss" />
+        <beans:constructor-arg value="yyyy-MM-dd HH:mm:ss" />
+    </beans:bean>
+
+    <beans:bean id="outputFile"
+        class="org.springframework.core.io.FileSystemResource" scope="step">
+        <beans:constructor-arg value="#{jobParameters[outputFile]}" />
+    </beans:bean>
+
+    <beans:bean id="outputWriter"
+        class="org.springframework.batch.item.file.FlatFileItemWriter">
+        <beans:property name="resource" ref="outputFile" />
+        <beans:property name="lineAggregator">
+            <beans:bean
+                class="org.springframework.batch.item.file.transform.PassThroughLineAggregator" />
+        </beans:property>
+    </beans:bean>
+
+    <step id="copyFileStep">
+        <tasklet>
+            <chunk reader="customerFileReader" writer="outputWriter"
+                commit-interval="10" />
+        </tasklet>
+    </step>
+
+    <job id="copyXMLJob">
+        <step id="step1" parent="copyFileStep" />
+    </job>
+</beans:beans>

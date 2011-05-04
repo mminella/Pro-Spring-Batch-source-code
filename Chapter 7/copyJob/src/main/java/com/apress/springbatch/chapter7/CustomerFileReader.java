@@ -25,12 +25,12 @@ public class CustomerFileReader implements
         curItem = null;
 
         if (item != null) {
-//            item.setTransactions(new ArrayList<Transaction>());
-//
-//            while (peek() instanceof Transaction) {
-//                item.getTransactions().add((Transaction) curItem);
-//                curItem = null;
-//            }
+            item.setTransactions(new ArrayList<Transaction>());
+
+            while (peek() instanceof Transaction) {
+                item.getTransactions().add((Transaction) curItem);
+                curItem = null;
+            }
         }
 
         return item;

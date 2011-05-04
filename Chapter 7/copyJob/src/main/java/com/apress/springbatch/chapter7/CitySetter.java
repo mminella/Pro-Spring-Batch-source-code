@@ -10,6 +10,7 @@ public class CitySetter implements PreparedStatementSetter {
     private String city;
 
     public void setValues(PreparedStatement ps) throws SQLException {
+        System.out.println("*********** " + city);
         ps.setString(1, city);
     }
 
