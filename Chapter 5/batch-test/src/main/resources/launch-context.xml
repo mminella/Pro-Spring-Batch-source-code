@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+    xmlns:batch="http://www.springframework.org/schema/batch" 
+	xmlns:p="http://www.springframework.org/schema/p" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+       	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       	http://www.springframework.org/schema/batch 
+	    http://www.springframework.org/schema/batch/spring-batch-2.1.xsd">
+
+	<bean id="jobOperator"
+		class="org.springframework.batch.core.launch.support.SimpleJobOperator"
+		p:jobLauncher-ref="jobLauncher" p:jobExplorer-ref="jobExplorer"
+		p:jobRepository-ref="jobRepository" p:jobRegistry-ref="jobRegistry"/>
+
+	<bean id="jobExplorer"
+		class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean"
+		p:dataSource-ref="dataSource"/>
+		
+	<bean id="jobRunner" class="com.apress.springbatch.chapter5.JMXJobRunnerImpl"
+		p:operator-ref="jobOperator"/>
+		
+  	<bean id="exporter" class="org.springframework.jmx.export.MBeanExporter" lazy-init="false">
+    	<property name="beans">
+      		<map>
+        		<entry key="bean:name=myJobRunner" value-ref="jobRunner"/>
+      		</map>
+    	</property>
+<!--    	<property name="assembler" ref="assembler"/>-->
+    	<property name="server" ref="server"/>
+  	</bean>
+  	
+  	<bean id="server" class="org.springframework.jmx.support.MBeanServerFactoryBean"/>
+  	
+  	<bean id="assembler" class="org.springframework.jmx.export.assembler.InterfaceBasedMBeanInfoAssembler">
+  		<property name="managedInterfaces">
+  			<list>
+  				<value>com.apress.springbatch.chapter5.JMXJobRunner</value>
+  			</list>
+  		</property>
+  	</bean>
+  	
+        <bean id="serverConnector" class="org.springframework.jmx.support.ConnectorServerFactoryBean">
+                <property name="objectName" value="connector:name=rmi"/>
+                <property name="serviceUrl"
+                          value="service:jmx:rmi://localhost/jndi/rmi://localhost:1099/jmxrmi"/>
+
+                <property name="threaded" value="true"/>
+                <property name="daemon" value="true"/>
+                <property name="server">
+                        <ref local="server"/>
+                </property>
+        </bean>
+
+        <bean id="registry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean">
+          <property name="port" value="1099"/>
+        </bean>	
+
+	<bean id="jobRegistry"
+		class="org.springframework.batch.core.configuration.support.MapJobRegistry" />
+		
+<bean class="org.springframework.batch.core.configuration.support.AutomaticJobRegistrar">
+   <property name="applicationContextFactories">
+      <bean class="org.springframework.batch.core.configuration.support.ClasspathXmlApplicationContextsFactoryBean">
+         <property name="resources" value="classpath*:/jobs/helloWorld.xml" />
+      </bean>
+   </property>
+   <property name="jobLoader">
+      <bean class="org.springframework.batch.core.configuration.support.DefaultJobLoader">
+         <property name="jobRegistry" ref="jobRegistry" />
+      </bean>
+   </property>
+</bean>
+
+	<bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor"/>
+	
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+		<property name="taskExecutor" ref="taskExecutor"/>
+	</bean>
+	
+	<batch:job-repository id="jobRepository" data-source="dataSource" transaction-manager="transactionManager"/>
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${batch.jdbc.driver}" />
+		<property name="url" value="${batch.jdbc.url}" />
+		<property name="username" value="${batch.jdbc.user}" />
+		<property name="password" value="${batch.jdbc.password}" />
+	</bean>
+
+	<!-- bean id="transactionManager" class="org.springframework.batch.support.transaction.ResourcelessTransactionManager"/-->
+
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" lazy-init="true">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="placeholderProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:batch.properties" />
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="order" value="1" />
+	</bean>
+
+	<!-- Initialize the datasource - remove this bean definition for production use! -->
+	<bean id="dataSourceInitializer" class="test.jdbc.datasource.DataSourceInitializer">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initScripts" value="${batch.schema.script}"/>
+	</bean>
+
+</beans>

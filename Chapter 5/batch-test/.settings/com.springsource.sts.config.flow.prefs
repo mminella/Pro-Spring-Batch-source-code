@@ -1,0 +1,4 @@
+#Fri Dec 31 10:43:56 CST 2010
+//com.springsource.sts.config.flow.coordinates\:http\://www.springframework.org/schema/batch\:/simple-cli-archetype/src/main/resources/jobs/helloWorld.xml=<?xml version\="1.0" encoding\="UTF-8"?>\n<graph>\n<element clazz\="StepModelElement" type\="step">\n<structure end\="846" endstart\="833" start\="752" startend\="784"/>\n<bounds height\="34" width\="113" x\="17" y\="19"/>\n</element>\n<element clazz\="JobModelElement" type\="job">\n<structure end\="960" endstart\="948" start\="853" startend\="884"/>\n<bounds height\="128" width\="143" x\="148" y\="19"/>\n</element>\n</graph>
+//com.springsource.sts.config.flow.coordinates\:http\://www.springframework.org/schema/batch\:/simple-cli-archetype/src/main/resources/launch-context.xml=<?xml version\="1.0" encoding\="UTF-8"?>\n<graph/>
+eclipse.preferences.version=1

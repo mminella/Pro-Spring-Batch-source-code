@@ -23,7 +23,7 @@
 	            <beans:property name="lineTokenizer">
 	                <beans:bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
 	                    <beans:property name="names"
-	                        value="firstName,middleInitial,lastName,address,city,state,zip,email"/>
+	                        value="firstName,middleInitial,lastName,address,city,state,zip"/>
 	                    <beans:property name="delimiter" value=","/>
 	                </beans:bean>
 	            </beans:property>
@@ -73,11 +73,11 @@
 	</beans:bean>
 	
 	<beans:bean id="customerMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller">
-<!--	    <beans:property name="aliases">-->
-<!--	        <util:map>-->
-<!--	            <beans:entry key="customer" value="com.apress.springbatch.chapter9.Customer" />-->
-<!--	        </util:map>-->
-<!--	    </beans:property>-->
+	    <beans:property name="aliases">
+	        <util:map>
+	            <beans:entry key="customer" value="com.apress.springbatch.chapter9.Customer" />
+	        </util:map>
+	    </beans:property>
 	</beans:bean>
 	
 	<beans:bean id="jdbcBatchWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
@@ -95,9 +95,9 @@
 <!--		<beans:property name="sessionFactory" ref="sessionFactory"/>-->
 <!--	</beans:bean>-->
 <!--		-->
-<!--	<beans:bean id="jpaBatchWriter" class="org.springframework.batch.item.database.JpaItemWriter">-->
-<!--		<beans:property name="entityManagerFactory" ref="entityManagerFactory"/>-->
-<!--	</beans:bean>-->
+	<beans:bean id="jpaBatchWriter" class="org.springframework.batch.item.database.JpaItemWriter">
+		<beans:property name="entityManagerFactory" ref="entityManagerFactory"/>
+	</beans:bean>
 	
 	<beans:bean id="customerService" class="com.apress.springbatch.chapter9.CustomerServiceImpl"/>
 
@@ -116,7 +116,7 @@
 	
 	<step id="formatFileStep">
 		<tasklet>
-			<chunk reader="customerFileReader" writer="jdbcBatchWriter" commit-interval="10">
+			<chunk reader="customerFileReader" writer="jpaBatchWriter" commit-interval="10">
 				<!-- Used with the composite writer and classifier -->
 <!--            	<streams>-->
 <!--                	<stream ref="flatFileOutputWriter"/>-->
