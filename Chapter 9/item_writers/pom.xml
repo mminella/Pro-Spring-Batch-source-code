@@ -11,7 +11,7 @@
 	the book Pro Spring Batch.</description>
 	<properties>
 		<spring.framework.version>3.0.5.RELEASE</spring.framework.version>
-		<spring.batch.version>2.1.6.RELEASE</spring.batch.version>
+		<spring.batch.version>4.2.0.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
 	<profiles>
