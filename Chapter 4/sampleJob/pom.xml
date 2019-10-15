@@ -12,7 +12,7 @@
 	<properties>
 		<maven.test.failure.ignore>true</maven.test.failure.ignore>
 		<spring.framework.version>3.0.5.RELEASE</spring.framework.version>
-		<spring.batch.version>2.1.7.RELEASE</spring.batch.version>
+		<spring.batch.version>4.2.0.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
 	<profiles>
