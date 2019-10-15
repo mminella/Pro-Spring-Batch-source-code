@@ -10,7 +10,7 @@
 	<description>This project will demonstrate the ability to process flows and steps in parallel</description>
 	<properties>
 		<spring.framework.version>2.5.6</spring.framework.version>
-		<spring.batch.version>2.1.7.RELEASE</spring.batch.version>
+		<spring.batch.version>4.2.0.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
 	<dependencies>
