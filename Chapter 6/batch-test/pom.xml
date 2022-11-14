@@ -10,7 +10,7 @@
 	<description>This project is to demonstrate the features of Spring Batch.</description>
 	<properties>
 		<maven.test.failure.ignore>true</maven.test.failure.ignore>
-		<spring.framework.version>3.0.5.RELEASE</spring.framework.version>
+		<spring.framework.version>3.2.18.RELEASE</spring.framework.version>
 		<spring.batch.version>2.1.7.RELEASE</spring.batch.version>
 		<dependency.locations.enabled>false</dependency.locations.enabled>
 	</properties>
